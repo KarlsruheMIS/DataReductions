@@ -60,3 +60,9 @@ int reduction_unconfined_csr(reduction_data *R, int N, const int *V, const int *
 
 int reduction_extended_unconfined_csr(reduction_data *R, int N, const int *V, const int *E,
                                       const long long *W, const int *A, int u, int *nRed, int *reducable);
+
+int reduction_boolean_width_csr(reduction_data *R, int N, const int *V, const int *E,
+                                const long long *W, const int *A, int u, int *nRed, int *reducable);
+
+int reduction_boolean_width_alt_csr(reduction_data *R, int N, const int *V, const int *E,
+                                    const long long *W, const int *A, int u, int *nRed, int *reducable);

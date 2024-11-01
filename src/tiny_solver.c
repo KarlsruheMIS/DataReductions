@@ -257,16 +257,17 @@ void tiny_solver_solve_neighbourhood(tiny_solver *solver, double tl, long long W
         int v = E[i];
         if (!A[v])
             continue;
-        solver->forward_map[v] = N;
-        solver->reverse_map[N] = v;
-        solver->subgraph_W[N] = W[v];
-        N++;
 
-        if (N > MAX_NODES)
+        if (N >= MAX_NODES)
         {
             solver->node_limit_exceeded = 1;
             return;
         }
+
+        solver->forward_map[v] = N;
+        solver->reverse_map[N] = v;
+        solver->subgraph_W[N] = W[v];
+        N++;
     }
 
     solver->subgraph_N = N;

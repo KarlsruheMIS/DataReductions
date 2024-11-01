@@ -74,11 +74,103 @@ void graph_store(FILE *f, graph *g)
     }
 }
 
+void graph_visualize_neighborhood(graph *g, int *A, int u)
+{
+    int *fm = malloc(sizeof(int) * g->N);
+    int *rm = malloc(sizeof(int) * g->N);
+    for (int i = 0; i < g->N; i++)
+        fm[i] = -1;
+
+    int *d1 = malloc(sizeof(int) * g->N);
+    for (int i = 0; i < g->N; i++)
+        d1[i] = 0;
+
+    int n = 0, m = 0;
+    rm[n] = u;
+    fm[u] = n++;
+    d1[u] = 1;
+    for (int i = g->V[u]; i < g->V[u + 1]; i++)
+    {
+        int v = g->E[i];
+        if (!A[v])
+            continue;
+
+        d1[v] = 1;
+        rm[n] = v;
+        fm[v] = n++;
+    }
+
+    for (int i = g->V[u]; i < g->V[u + 1]; i++)
+    {
+        int v = g->E[i];
+        if (!A[v])
+            continue;
+
+        m++;
+        for (int j = g->V[v]; j < g->V[v + 1]; j++)
+        {
+            int w = g->E[j];
+            if (!A[w])
+                continue;
+
+            m++;
+            if (!d1[w] && fm[w] < 0)
+            {
+                rm[n] = w;
+                fm[w] = n++;
+                for (int k = g->V[w]; k < g->V[w + 1]; k++)
+                {
+                    int x = g->E[k];
+                    if (!A[x] || !d1[x])
+                        continue;
+                    m++;
+                }
+            }
+        }
+    }
+
+    FILE *f = fopen("html/graph.js", "w");
+    fprintf(f, "let n = %d, m = %d;\n", n, m);
+
+    fprintf(f, "let W = [");
+    for (int i = 0; i < n; i++)
+        fprintf(f, "%lld,", g->W[rm[i]]);
+    fprintf(f, "];\n");
+
+    fprintf(f, "let V = [%d,", 0);
+    int offset = 0;
+    for (int i = 0; i < n; i++)
+    {
+        int v = rm[i];
+        for (int j = g->V[v]; j < g->V[v + 1]; j++)
+            if (A[g->E[j]] && fm[g->E[j]] >= 0 && (d1[v] || d1[g->E[j]]))
+                offset++;
+        fprintf(f, "%d,", offset);
+    }
+    fprintf(f, "];\n");
+
+    fprintf(f, "let E = [");
+    for (int i = 0; i < n; i++)
+    {
+        int v = rm[i];
+        for (int j = g->V[v]; j < g->V[v + 1]; j++)
+            if (A[g->E[j]] && fm[g->E[j]] >= 0 && (d1[v] || d1[g->E[j]]))
+                fprintf(f, "%d,", fm[g->E[j]]);
+    }
+    fprintf(f, "];\n");
+
+    fclose(f);
+
+    free(fm);
+    free(rm);
+    free(d1);
+}
+
 void graph_free(graph *g)
 {
     if (g == NULL)
         return;
-        
+
     free(g->V);
     free(g->E);
     free(g->W);

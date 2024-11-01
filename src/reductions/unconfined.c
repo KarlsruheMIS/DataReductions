@@ -248,3 +248,261 @@ int reduction_extended_unconfined_csr(reduction_data *R, int N, const int *V, co
 
     return 0;
 }
+
+int reduction_boolean_width_csr(reduction_data *R, int N, const int *V, const int *E,
+                                const long long *W, const int *A, int u, int *nRed, int *reducable)
+{
+    assert(A[u]);
+    assert(R->Nb >= 3);
+
+    long long Wx = 0, Wy = 0;
+
+    int *Sy = R->T[0], *Sx = R->T[1];
+    int *SBy = R->TB[0], *SBx = R->TB[1];
+
+    int *NBu = R->TB[2];
+    NBu[u] = 1;
+
+    for (int i = V[u]; i < V[u + 1]; i++)
+    {
+        int v = E[i];
+        if (!A[v])
+            continue;
+
+        NBu[v] = 1;
+    }
+
+    int x = -1;
+    long long wy;
+    for (int i = V[u]; i < V[u + 1]; i++)
+    {
+        int _x = E[i];
+        if (!A[_x])
+            continue;
+
+        long long _wy = 0;
+        for (int j = V[_x]; j < V[_x + 1]; j++)
+        {
+            int v = E[j];
+            if (!A[v] || NBu[v])
+                continue;
+
+            _wy += W[v];
+        }
+
+        if (x < 0 || W[x] - wy < W[_x] - _wy)
+        {
+            x = _x;
+            wy = _wy;
+        }
+    }
+
+    if (x < 0)
+        return 0;
+
+    int ny = 0, nx = 0;
+
+    Wy += wy;
+    Wx += W[x];
+    Sx[nx++] = x;
+    SBx[x] = 1;
+
+    for (int i = V[x]; i < V[x + 1]; i++)
+    {
+        int v = E[i];
+        if (!A[v] || NBu[v])
+            continue;
+
+        Sy[ny++] = v;
+        SBy[v] = 1;
+    }
+
+    // printf("%lld >= %lld + %lld (%lld)\n", Wx, W[u], Wy, Wx - (W[u] + Wy));
+
+    while (1)
+    {
+        x = -1;
+        wy = 0;
+        for (int i = V[u]; i < V[u + 1]; i++)
+        {
+            int _x = E[i];
+            if (!A[_x] || SBx[_x])
+                continue;
+
+            long long _wy = 0;
+            int cand = 1;
+            for (int j = V[_x]; j < V[_x + 1]; j++)
+            {
+                int v = E[j];
+                if (!A[v])
+                    continue;
+
+                if (SBx[v])
+                {
+                    cand = 0;
+                    break;
+                }
+
+                if (NBu[v] || SBy[v])
+                    continue;
+
+                _wy += W[v];
+            }
+
+            if (cand && (x < 0 || W[x] - wy < W[_x] - _wy))
+            {
+                x = _x;
+                wy = _wy;
+            }
+        }
+
+        if (x < 0 || W[x] - wy < 0)
+            break;
+
+        Wy += wy;
+        Wx += W[x];
+        Sx[nx++] = x;
+        SBx[x] = 1;
+
+        for (int i = V[x]; i < V[x + 1]; i++)
+        {
+            int v = E[i];
+            if (!A[v] || NBu[v] || SBy[v])
+                continue;
+
+            Sy[ny++] = v;
+            SBy[v] = 1;
+        }
+
+        // printf("%lld >= %lld + %lld (%lld)\n", Wx, W[u], Wy, Wx - (W[u] + Wy));
+
+        if (Wx >= W[u] + Wy)
+            break;
+    }
+
+    // if (ny > 0 && ny < 128)
+    // {
+    //     tiny_solver_solve_subgraph(R->solver, 10.0, 999999999, ny, Sy, V, E, W, A);
+    //     //printf("%lld %lld\n", Wy, R->solver->independent_set_weight);
+    //     if (R->solver->time_limit_exceeded)
+    //         Wy = R->solver->independent_set_weight;
+    // }
+
+    // printf("\n");
+
+    NBu[u] = 0;
+    for (int i = V[u]; i < V[u + 1]; i++)
+    {
+        int v = E[i];
+        if (!A[v])
+            continue;
+
+        NBu[v] = 0;
+
+        if (!SBx[v])
+            continue;
+
+        SBx[v] = 0;
+
+        for (int j = V[v]; j < V[v + 1]; j++)
+        {
+            int w = E[j];
+            if (!A[w])
+                continue;
+
+            SBy[w] = 0;
+        }
+    }
+
+    // for (int i = 0; i < N; i++)
+    // {
+    //     SBx[i] = 0;
+    //     SBy[i] = 0;
+    //     NBu[i] = 0;
+    // }
+
+    if (Wx >= W[u] + Wy)
+    {
+        *nRed = 1;
+        reducable[0] = u;
+        return -1;
+    }
+
+    return 0;
+}
+
+int reduction_boolean_width_alt_csr(reduction_data *R, int N, const int *V, const int *E,
+                                    const long long *W, const int *A, int u, int *nRed, int *reducable)
+{
+    assert(A[u]);
+
+    tiny_solver_solve_neighbourhood(R->solver, 10.0, 999999999, u, V, E, W, A);
+    if (R->solver->time_limit_exceeded || R->solver->node_limit_exceeded)
+        return 0;
+
+    long long Wx = R->solver->independent_set_weight;
+
+    if (Wx <= W[u])
+    {
+        *nRed = 1;
+        reducable[0] = u;
+        return 1;
+    }
+
+    assert(R->Nb >= 3);
+
+    int nx = 0, ny = 0;
+    int *Sx = R->T[0], *Sy = R->T[1];
+    int *SBx = R->TB[0], *SBy = R->TB[1], *NBu = R->TB[2];
+
+    for (int i = V[u]; i < V[u + 1]; i++)
+    {
+        int v = E[i];
+        if (!A[v])
+            continue;
+        NBu[v] = 1;
+    }
+
+    long long Wy = 0;
+    for (int i = 0; i < MAX_SOLVE; i++)
+    {
+        if (R->solver->independent_set[i] == 1)
+        {
+            int v = R->solver->reverse_map[i];
+            Sx[nx++] = v;
+            SBx[v] = 1;
+        }
+    }
+    for (int i = 0; i < nx; i++)
+    {
+        int v = Sx[i];
+        for (int j = V[v]; j < V[v + 1]; j++)
+        {
+            int w = E[j];
+            if (!A[w] || SBy[w] || NBu[w])
+                continue;
+
+            Wy += W[w];
+            Sy[ny++] = w;
+            SBy[w] = 1;
+        }
+    }
+
+    // Can reduce Wy by solving MWIS in Sy
+
+    for (int i = 0; i < N; i++)
+    {
+        SBx[i] = 0;
+        SBy[i] = 0;
+        NBu[i] = 0;
+    }
+
+    if (Wx >= Wy)
+    {
+        *nRed = 1;
+        reducable[0] = u;
+        return -1;
+    }
+
+    return 0;
+}
