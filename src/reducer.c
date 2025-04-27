@@ -152,6 +152,9 @@ void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l)
             r->In_queues[rule][u] = 0;
         }
 
+        if (!g->A[u])
+            continue;
+
         int res = r->Rule[rule].reduce(g, u, &l->Offset[l->n], r->b, r->c, &l->Log_data[l->n]);
 
         r->b->t++;

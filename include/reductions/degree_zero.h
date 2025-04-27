@@ -17,5 +17,5 @@ static reduction degree_zero = {
     .restore = degree_zero_restore_graph,
     .reconstruct = degree_zero_reconstruct_solution,
     .clean = degree_zero_clean,
-    .global = 0
+    .global = 0,
 };

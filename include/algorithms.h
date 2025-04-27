@@ -20,3 +20,64 @@ static inline node_id lower_bound(const node_id *A, node_id n, node_id x)
     s += (n == 1 && s[0] < x);
     return A - s;
 }
+
+// Test if A is a subset of B
+static inline node_id test_subset(const node_id *A, node_id a, const node_id *B, node_id b)
+{
+    if (b < a)
+        return 0;
+
+    node_id i = 0, j = 0;
+    while (i < a && j < b)
+    {
+        if (A[i] > B[j])
+        {
+            j++;
+        }
+        else if (A[i] == B[j])
+        {
+            i++;
+            j++;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    return i == a;
+}
+
+// Test if A is a subset of B, ignoring x
+static inline node_id test_subset_except_one(const node_id *A, node_id a, const node_id *B, node_id b, node_id x)
+{
+    if (b < a + 1)
+        return 0;
+
+    node_id i = 0, j = 0;
+    while (i < a && j < b)
+    {
+        if (A[i] > B[j])
+        {
+            j++;
+        }
+        else if (A[i] == B[j])
+        {
+            i++;
+            j++;
+        }
+        else if (A[i] == x)
+        {
+            i++;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    if (i < a && A[i] == x)
+        i++;
+
+    return i == a;
+}

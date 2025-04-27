@@ -17,5 +17,5 @@ static reduction degree_one = {
     .restore = degree_one_restore_graph,
     .reconstruct = degree_one_reconstruct_solution,
     .clean = degree_one_clean,
-    .global = 0
+    .global = 0,
 };

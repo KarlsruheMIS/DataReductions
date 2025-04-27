@@ -1,9 +1,9 @@
 SHELL = /bin/bash
 
 CC = gcc
-CFLAGS = -g -std=gnu17 -O3 -march=native -I include -I include/reductions -DNDEBUG
+CFLAGS = -g -std=gnu17 -O3 -march=native -I include -I include/reductions
 
-OBJ_REDUCE = main.o graph.o reducer.o reduction.o degree_zero.o degree_one.o
+OBJ_REDUCE = main.o graph.o reducer.o reduction.o degree_zero.o degree_one.o domination.o
 
 OBJ_REDUCE := $(addprefix bin/, $(OBJ_REDUCE))
 DEP = $(OBJ_REDUCE)

@@ -25,6 +25,7 @@ int degree_one_reduce_graph(graph *g, node_id u, node_weight *offset, buffers *b
         d->z = 1; // flag for folding
     }
 
+    c->n = 0;
     for (node_id i = 0; i < g->D[d->v]; i++)
         c->V[c->n++] = g->V[d->v][i];
 

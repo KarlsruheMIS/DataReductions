@@ -299,7 +299,7 @@ void graph_deactivate_neighborhood(graph *g, node_id u)
             if (!g->A[w])
                 continue;
             graph_remove_endpoint_lin(g, w, v);
-            rm += 2;
+            rm++;
         }
     }
     g->m -= rm / 2;
