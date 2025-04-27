@@ -8,8 +8,8 @@ void reduction_data_init(graph *g, buffers **b, change_list **c)
 
     (*b)->t = 1;
     (*b)->_a = g->_a;
-    (*b)->buffers = malloc(sizeof(node_id) * N_BUFFERS);
-    (*b)->fast_sets = malloc(sizeof(int) * N_BUFFERS);
+    (*b)->buffers = malloc(sizeof(node_id *) * N_BUFFERS);
+    (*b)->fast_sets = malloc(sizeof(int *) * N_BUFFERS);
 
     for (int i = 0; i < N_BUFFERS; i++)
     {

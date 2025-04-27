@@ -1,16 +1,16 @@
 SHELL = /bin/bash
 
 CC = gcc
-CFLAGS = -g -std=gnu17 -O3 -march=native -I include -DNDEBUG
+CFLAGS = -g -std=gnu17 -O3 -march=native -I include -I include/reductions -DNDEBUG
 
-OBJ_REDUCE = main.o graph.o reducer.o reduction.o
+OBJ_REDUCE = main.o graph.o reducer.o reduction.o degree_zero.o
 
 OBJ_REDUCE := $(addprefix bin/, $(OBJ_REDUCE))
 DEP = $(OBJ_REDUCE)
 DEP := $(sort $(DEP))
 
-vpath %.c src
-vpath %.h include
+vpath %.c src src/reductions
+vpath %.h include include/reductions
 
 all : REDUCE
 

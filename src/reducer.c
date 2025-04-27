@@ -5,6 +5,7 @@
 reducer *reducer_init(graph *g, int n_rules, ...)
 {
     va_list args;
+    va_start(args, n_rules);
 
     reducer *r = malloc(sizeof(reducer));
     r->n_rules = n_rules;
@@ -76,6 +77,8 @@ void reducer_free(reducer *r)
 
     free(r->Rule);
     reduction_data_free(r->b, r->c);
+
+    free(r);
 }
 
 reduction_log *reducer_init_reduction_log(graph *g)
@@ -88,6 +91,7 @@ reduction_log *reducer_init_reduction_log(graph *g)
     l->_a = g->_a;
     l->Log_data = malloc(sizeof(reconstruction_data) * l->_a);
     l->Log_rule = malloc(sizeof(reduction) * l->_a);
+    l->Offset = malloc(sizeof(long long) * l->_a);
 
     return l;
 }
@@ -98,6 +102,7 @@ void reducer_increase_reduction_log(reduction_log *l)
 
     l->Log_data = realloc(l->Log_data, sizeof(reconstruction_data) * l->_a);
     l->Log_rule = realloc(l->Log_rule, sizeof(reduction) * l->_a);
+    l->Offset = realloc(l->Offset, sizeof(long long) * l->_a);
 }
 
 void reducer_free_reduction_log(reduction_log *l)
@@ -109,6 +114,9 @@ void reducer_free_reduction_log(reduction_log *l)
 
     free(l->Log_data);
     free(l->Log_rule);
+    free(l->Offset);
+
+    free(l);
 }
 
 reduction_log *reducer_reduce(reducer *r, graph *g)
