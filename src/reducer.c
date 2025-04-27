@@ -19,8 +19,8 @@ reducer *reducer_init(graph *g, int n_rules, ...)
     for (int i = 0; i < r->n_rules; i++)
     {
         r->Queue_count[i] = g->n;
-        r->Queues[i] = malloc(sizeof(node_id) * g->_a);
-        r->In_queues[i] = malloc(sizeof(int) * g->_a);
+        r->Queues[i] = malloc(sizeof(node_id) * r->_a);
+        r->In_queues[i] = malloc(sizeof(int) * r->_a);
 
         // Perhaps make filling the queues optional..
         for (long long j = 0; j < g->n; j++)
@@ -45,7 +45,20 @@ reducer *reducer_init(graph *g, int n_rules, ...)
 
 void reducer_increase(reducer *r)
 {
-    
+    r->_a *= 2;
+
+    for (int i = 0; i < r->n_rules; i++)
+    {
+        r->Queues[i] = realloc(r->Queues[i], sizeof(node_id) * r->_a);
+        r->In_queues[i] = realloc(r->In_queues[i], sizeof(int) * r->_a);
+
+        for (long long j = r->_a / 2; j < r->_a; j++)
+        {
+            r->In_queues[i][j] = 0;
+        }
+    }
+
+    reduction_data_increase(r->b, r->c);
 }
 
 void reducer_free(reducer *r)
@@ -65,18 +78,26 @@ void reducer_free(reducer *r)
     reduction_data_free(r->b, r->c);
 }
 
-reduction_log *reducer_init_reduction_log()
+reduction_log *reducer_init_reduction_log(graph *g)
 {
     reduction_log *l = malloc(sizeof(reduction_log));
 
     l->n = 0;
     l->offset = 0ll;
 
-    l->_a = ALLOC_N_INIT;
+    l->_a = g->_a;
     l->Log_data = malloc(sizeof(reconstruction_data) * l->_a);
     l->Log_rule = malloc(sizeof(reduction) * l->_a);
 
     return l;
+}
+
+void reducer_increase_reduction_log(reduction_log *l)
+{
+    l->_a *= 2;
+
+    l->Log_data = realloc(l->Log_data, sizeof(reconstruction_data) * l->_a);
+    l->Log_rule = realloc(l->Log_rule, sizeof(reduction) * l->_a);
 }
 
 void reducer_free_reduction_log(reduction_log *l)
@@ -92,7 +113,7 @@ void reducer_free_reduction_log(reduction_log *l)
 
 reduction_log *reducer_reduce(reducer *r, graph *g)
 {
-    reduction_log *l = reducer_init_reduction_log();
+    reduction_log *l = reducer_init_reduction_log(g);
     reducer_reduce_continue(r, g, l);
     return l;
 }
@@ -128,9 +149,10 @@ void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l)
         if (res)
         {
             while (g->_a > r->_a)
-            {
-                reduction_data_increase(r->b, r->c);
-            }
+                reducer_increase(r);
+            if (l->n == l->_a)
+                reducer_increase_reduction_log(l);
+
             for (node_id i = 0; i < r->c->n; i++)
             {
                 node_id v = r->c->V[i];
@@ -151,10 +173,18 @@ void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l)
     }
 }
 
-void reducer_include_vertex(reducer *r, graph *g, reduction_log *l, int u);
+void reducer_include_vertex(reducer *r, graph *g, reduction_log *l, node_id u)
+{
+}
 
-void reducer_exclude_vertex(reducer *r, graph *g, reduction_log *l, int u);
+void reducer_exclude_vertex(reducer *r, graph *g, reduction_log *l, node_id u)
+{
+}
 
-void reducer_restore_graph(graph *g, reduction_log *l, int t);
+void reducer_restore_graph(graph *g, reduction_log *l, long long t)
+{
+}
 
-void reducer_lift_solution(reduction_log *l, int *I);
+void reducer_lift_solution(reduction_log *l, int *I)
+{
+}
