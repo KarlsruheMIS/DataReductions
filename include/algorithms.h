@@ -1,17 +1,19 @@
 #pragma once
 
-static inline int compare_ints(const void *a, const void *b)
+#include "defs.h"
+
+static inline int compare_ids(const void *a, const void *b)
 {
-    return (*(int *)a - *(int *)b);
+    return (*(node_id *)a - *(node_id *)b);
 }
 
 // Returns the position of the first element <= to x
-static inline int lower_bound(const int *A, int n, int x)
+static inline node_id lower_bound(const node_id *A, node_id n, node_id x)
 {
-    const int *s = A;
+    const node_id *s = A;
     while (n > 1)
     {
-        int h = n / 2;
+        node_id h = n / 2;
         s += (s[h - 1] < x) * h;
         n -= h;
     }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "defs.h"
+
 #include <stdio.h>
 
 /*
@@ -14,12 +16,13 @@
 
 typedef struct
 {
-    int n, m;        // Number of vertices and edges
-    int **V, *D, *A; // Adjacency lists, degrees, and active flags
-    long long *W;    // Vertex weights
+    long long n, m;  // Number of vertices and edges
+    node_id **V, *D; // Adjacency lists and degrees
+    node_weight *W;  // Vertex weights
+    int *A;          // Active flags
 
-    int _a;  // Number of vertices allocated memory for
-    int *_A; // Allocated memory per neighborhood
+    long long _a;  // Number of vertices allocated memory for
+    long long *_A; // Allocated memory per neighborhood
 } graph;
 
 graph *graph_init();
@@ -32,20 +35,26 @@ void graph_free(graph *g);
 
 void graph_sort_edges(graph *g);
 
-void graph_add_vertex(graph *g, long long w);
+void graph_add_vertex(graph *g, node_weight w);
 
-void graph_add_edge(graph *g, int u, int v);
+void graph_add_edge(graph *g, node_id u, node_id v);
 
-// After construction, use these to maintain sorted neighborhoods
+/*
+    After construction, use these to maintain sorted neighborhoods.
 
-void graph_remove_edge(graph *g, int u, int v);
+    The deactivate function only removes edges from the active side,
+    meaning the corresponding activate function can easily reconstruct
+    the graph to before the deactivate call.
+*/
 
-void graph_insert_edge(graph *g, int u, int v);
+void graph_remove_edge(graph *g, node_id u, node_id v);
 
-void graph_deactivate_vertex(graph *g, int u);
+void graph_insert_edge(graph *g, node_id u, node_id v);
 
-void graph_activate_vertex(graph *g, int u);
+void graph_deactivate_vertex(graph *g, node_id u);
 
-void graph_deactivate_neighborhood(graph *g, int u);
+void graph_activate_vertex(graph *g, node_id u);
 
-void graph_activate_neighborhood(graph *g, int u);
+void graph_deactivate_neighborhood(graph *g, node_id u);
+
+void graph_activate_neighborhood(graph *g, node_id u);
