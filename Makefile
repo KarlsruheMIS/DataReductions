@@ -1,29 +1,27 @@
 SHELL = /bin/bash
 
 CC = gcc
-CFLAGS = -std=gnu17 -O3 -march=native -I include -fopenmp -DNDEBUG
+CFLAGS = -g -std=gnu17 -O3 -march=native -I include -DNDEBUG
 
-OBJ_KERNEL = main.o graph.o reductions.o tiny_solver.o \
-			 clique.o unconfined.o neighborhood.o domination.o \
-			 single_edge.o extended_single_edge.o twin.o extended_twin.o heavy_vertex.o
+OBJ_REDUCE = main.o graph.o
 
-OBJ_KERNEL := $(addprefix bin/, $(OBJ_KERNEL))
-DEP = $(OBJ_KERNEL)
+OBJ_REDUCE := $(addprefix bin/, $(OBJ_REDUCE))
+DEP = $(OBJ_REDUCE)
 DEP := $(sort $(DEP))
 
-vpath %.c src src/reductions
+vpath %.c src
 vpath %.h include
 
-all : KERNEL
+all : REDUCE
 
 -include $(DEP:.o=.d)
 
-KERNEL : $(OBJ_KERNEL)
-	$(CC) $(CFLAGS) -o $@ $^ -lm
+REDUCE : $(OBJ_REDUCE)
+	$(CC) $(CFLAGS) -o $@ $^
 
 bin/%.o : %.c
 	$(CC) $(CFLAGS) -MMD -c $< -o $@
 
 .PHONY : clean
 clean :
-	rm -f KERNEL $(DEP) $(DEP:.o=.d)
+	rm -f REDUCE $(DEP) $(DEP:.o=.d)

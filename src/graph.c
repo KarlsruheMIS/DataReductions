@@ -1,265 +1,336 @@
 #include "graph.h"
+#include "algorithms.h"
 
 #include <stdlib.h>
+#include <assert.h>
 #include <sys/mman.h>
 
-static inline void parse_id(char *data, size_t *p, long long *v)
-{
-    while (data[*p] < '0' || data[*p] > '9')
-        (*p)++;
+#define ALLOC_DEGREE 16
 
-    *v = 0;
-    while (data[*p] >= '0' && data[*p] <= '9')
-        *v = (*v) * 10 + data[(*p)++] - '0';
+void graph_increase_size(graph *g)
+{
+    g->_a *= 2;
+    g->V = realloc(g->V, sizeof(int *) * g->_a);
+    g->D = realloc(g->D, sizeof(int) * g->_a);
+    g->A = realloc(g->A, sizeof(int) * g->_a);
+    g->_A = realloc(g->_A, sizeof(int) * g->_a);
+    g->W = realloc(g->W, sizeof(long long) * g->_a);
+
+    for (int i = g->_a / 2; i < g->_a; i++)
+    {
+        g->_A[i] = ALLOC_DEGREE;
+        g->V[i] = malloc(sizeof(int) * g->_A[i]);
+    }
 }
 
-graph *graph_parse(FILE *f)
+void graph_append_endpoint(graph *g, int u, int v)
 {
-    fseek(f, 0, SEEK_END);
-    size_t size = ftell(f);
-    fseek(f, 0, SEEK_SET);
-
-    char *data = mmap(0, size, PROT_READ, MAP_PRIVATE, fileno_unlocked(f), 0);
-    size_t p = 0;
-
-    long long N, M, t;
-    parse_id(data, &p, &N);
-    parse_id(data, &p, &M);
-    parse_id(data, &p, &t);
-
-    int *V = malloc(sizeof(int) * (N + 1));
-    int *E = malloc(sizeof(int) * (M * 2));
-
-    long long *W = malloc(sizeof(long long) * N);
-
-    int ei = 0;
-    for (int u = 0; u < N; u++)
+    if (g->_A[u] == g->D[u])
     {
-        parse_id(data, &p, W + u);
-        V[u] = ei;
-        while (ei < M * 2)
-        {
-            while (data[p] == ' ')
-                p++;
-            if (data[p] == '\n')
-                break;
-
-            long long e;
-            parse_id(data, &p, &e);
-            E[ei++] = e - 1;
-            ;
-        }
-        p++;
+        g->_A[u] *= 2;
+        g->V[u] = realloc(g->V[u], sizeof(int) * g->_A[u]);
     }
-    V[N] = ei;
+    g->V[u][g->D[u]++] = v;
+}
 
-    munmap(data, size);
-
+graph *graph_init()
+{
     graph *g = malloc(sizeof(graph));
-    *g = (graph){.N = N, .V = V, .E = E, .W = W};
+    *g = (graph){.n = 0, .m = 0, ._a = (1 << 10)};
+
+    g->V = malloc(sizeof(int *) * g->_a);
+    g->D = malloc(sizeof(int) * g->_a);
+    g->A = malloc(sizeof(int) * g->_a);
+    g->_A = malloc(sizeof(int) * g->_a);
+    g->W = malloc(sizeof(long long) * g->_a);
+
+    for (int i = 0; i < g->_a; i++)
+    {
+        g->_A[i] = ALLOC_DEGREE;
+        g->V[i] = malloc(sizeof(int) * g->_A[i]);
+    }
 
     return g;
 }
 
-// store graph in metis format
-void graph_store(FILE *f, graph *g)
+static inline void parse_id(char *Data, size_t *p, long long *v)
 {
-    fprintf(f, "%d %d 10\n", g->N, g->V[g->N] / 2);
-    for (int u = 0; u < g->N; u++)
-    {
-        fprintf(f, "%lld", g->W[u]);
-        for (int i = g->V[u]; i < g->V[u + 1]; i++)
-            fprintf(f, " %d", g->E[i] + 1);
-        fprintf(f, "\n");
-    }
+    while (Data[*p] < '0' || Data[*p] > '9')
+        (*p)++;
+
+    *v = 0;
+    while (Data[*p] >= '0' && Data[*p] <= '9')
+        *v = (*v) * 10 + Data[(*p)++] - '0';
 }
 
-void graph_visualize_neighborhood(graph *g, int *A, int u)
+graph *graph_parse(FILE *f)
 {
-    int *fm = malloc(sizeof(int) * g->N);
-    int *rm = malloc(sizeof(int) * g->N);
-    for (int i = 0; i < g->N; i++)
-        fm[i] = -1;
+    graph *g = graph_init();
 
-    int *d1 = malloc(sizeof(int) * g->N);
-    for (int i = 0; i < g->N; i++)
-        d1[i] = 0;
+    fseek(f, 0, SEEK_END);
+    size_t size = ftell(f);
+    fseek(f, 0, SEEK_SET);
 
-    int n = 0, m = 0;
-    rm[n] = u;
-    fm[u] = n++;
-    d1[u] = 1;
-    for (int i = g->V[u]; i < g->V[u + 1]; i++)
+    char *Data = mmap(0, size, PROT_READ, MAP_PRIVATE, fileno_unlocked(f), 0);
+    size_t p = 0;
+
+    long long n, m, w, t;
+    parse_id(Data, &p, &n);
+    parse_id(Data, &p, &m);
+    parse_id(Data, &p, &t);
+
+    for (int u = 0; u < n; u++)
     {
-        int v = g->E[i];
-        if (!A[v])
-            continue;
-
-        d1[v] = 1;
-        rm[n] = v;
-        fm[v] = n++;
+        graph_add_vertex(g, 0);
     }
 
-    for (int i = g->V[u]; i < g->V[u + 1]; i++)
+    long long ei = 0;
+    for (int u = 0; u < n; u++)
     {
-        int v = g->E[i];
-        if (!A[v])
-            continue;
+        parse_id(Data, &p, &w);
+        g->W[u] = w;
 
-        m++;
-        for (int j = g->V[v]; j < g->V[v + 1]; j++)
+        while (ei < m * 2)
         {
-            int w = g->E[j];
-            if (!A[w])
-                continue;
+            while (Data[p] == ' ')
+                p++;
+            if (Data[p] == '\n')
+                break;
 
-            m++;
-            if (!d1[w] && fm[w] < 0)
-            {
-                rm[n] = w;
-                fm[w] = n++;
-                for (int k = g->V[w]; k < g->V[w + 1]; k++)
-                {
-                    int x = g->E[k];
-                    if (!A[x] || !d1[x])
-                        continue;
-                    m++;
-                }
-            }
+            long long e;
+            parse_id(Data, &p, &e);
+            if (e - 1 > u)
+                graph_add_edge(g, u, e - 1);
+            ei++;
         }
+        p++;
     }
 
-    FILE *f = fopen("html/graph.js", "w");
-    fprintf(f, "let n = %d, m = %d;\n", n, m);
+    munmap(Data, size);
 
-    fprintf(f, "let W = [");
-    for (int i = 0; i < n; i++)
-        fprintf(f, "%lld,", g->W[rm[i]]);
-    fprintf(f, "];\n");
-
-    fprintf(f, "let V = [%d,", 0);
-    int offset = 0;
-    for (int i = 0; i < n; i++)
-    {
-        int v = rm[i];
-        for (int j = g->V[v]; j < g->V[v + 1]; j++)
-            if (A[g->E[j]] && fm[g->E[j]] >= 0 && (d1[v] || d1[g->E[j]]))
-                offset++;
-        fprintf(f, "%d,", offset);
-    }
-    fprintf(f, "];\n");
-
-    fprintf(f, "let E = [");
-    for (int i = 0; i < n; i++)
-    {
-        int v = rm[i];
-        for (int j = g->V[v]; j < g->V[v + 1]; j++)
-            if (A[g->E[j]] && fm[g->E[j]] >= 0 && (d1[v] || d1[g->E[j]]))
-                fprintf(f, "%d,", fm[g->E[j]]);
-    }
-    fprintf(f, "];\n");
-
-    fclose(f);
-
-    free(fm);
-    free(rm);
-    free(d1);
+    graph_sort_edges(g);
+    return g;
 }
 
 void graph_free(graph *g)
 {
-    if (g == NULL)
-        return;
-
+    for (int i = 0; i < g->_a; i++)
+    {
+        free(g->V[i]);
+    }
     free(g->V);
-    free(g->E);
+    free(g->D);
+    free(g->A);
+    free(g->_A);
     free(g->W);
 
     free(g);
 }
 
-static inline int compare(const void *a, const void *b)
+void graph_sort_edges(graph *g)
 {
-    return (*(int *)a - *(int *)b);
+    int m = 0;
+    for (int i = 0; i < g->n; i++)
+    {
+        qsort(g->V[i], g->D[i], sizeof(int), compare_ints);
+        int d = 0;
+        for (int j = 0; j < g->D[i]; j++)
+        {
+            if (j == 0 || g->V[i][j] > g->V[i][d - 1])
+                g->V[i][d++] = g->V[i][j];
+        }
+        g->D[i] = d;
+        m += d;
+    }
+    g->m = m / 2;
 }
 
-int graph_validate(graph *g)
+void graph_add_vertex(graph *g, long long w)
 {
-    int M = 0;
-    for (int u = 0; u < g->N; u++)
+    if (g->n == g->_a)
+        graph_increase_size(g);
+
+    int u = g->n;
+    g->D[u] = 0;
+    g->A[u] = 1;
+    g->W[u] = w;
+    g->n++;
+}
+
+void graph_add_edge(graph *g, int u, int v)
+{
+    assert(u < g->n && v < g->n);
+    graph_append_endpoint(g, u, v);
+    graph_append_endpoint(g, v, u);
+    g->m += 1;
+}
+
+// Everything below this point assumes sorted neighborhoods
+
+void graph_remove_endpoint(graph *g, int u, int v)
+{
+    int p = lower_bound(g->V[u], g->D[u], v);
+
+    assert(p < g->D[u] && g->V[u][p] == v);
+
+    for (int i = p + 1; i < g->D[u]; i++)
     {
-        if (g->V[u + 1] - g->V[u] < 0)
-            return 0;
+        g->V[u][i - 1] = g->V[u][i];
+    }
+    g->D[u]--;
+}
 
-        M += g->V[u + 1] - g->V[u];
-
-        for (int i = g->V[u]; i < g->V[u + 1]; i++)
+void graph_remove_endpoint_lin(graph *g, int u, int v)
+{
+    int p = -1;
+    for (int i = 0; i < g->D[u]; i++)
+    {
+        if (g->V[u][i] == v)
         {
-            if (i < 0 || i >= g->V[g->N])
-                return 0;
-
-            int v = g->E[i];
-            if (v < 0 || v >= g->N || v == u || (i > g->V[u] && v <= g->E[i - 1]))
-                return 0;
-
-            // if (bsearch(&u, g->E + g->V[v], g->V[v + 1] - g->V[v], sizeof(int), compare) == NULL)
-            //     return 0;
+            p = i;
+            break;
         }
     }
 
-    if (M != g->V[g->N])
-        return 0;
+    assert(p >= 0);
 
-    return 1;
+    for (int i = p + 1; i < g->D[u]; i++)
+    {
+        g->V[u][i - 1] = g->V[u][i];
+    }
+    g->D[u]--;
 }
 
-graph *graph_subgraph(graph *g, int *mask, int *reverse_mapping)
+void graph_remove_edge(graph *g, int u, int v)
 {
-    int *forward_mapping = malloc(sizeof(int) * g->N);
-    int N = 0, M = 0;
-    for (int u = 0; u < g->N; u++)
+    assert(g->A[u] && g->A[v]);
+
+    graph_remove_endpoint_lin(g, u, v);
+    graph_remove_endpoint_lin(g, v, u);
+    g->m -= 1;
+}
+
+void graph_insert_endpoint(graph *g, int u, int v)
+{
+    int p = lower_bound(g->V[u], g->D[u], v);
+
+    assert(p <= g->D[u] && (p == g->D[u] || g->V[u][p] > v));
+
+    graph_append_endpoint(g, u, v);
+    for (int i = p + 1; i < g->D[u]; i++)
     {
-        if (!mask[u])
-            continue;
+        g->V[u][i] = g->V[u][i - 1];
+    }
+    g->V[u][p] = v;
+}
 
-        forward_mapping[u] = N;
-        reverse_mapping[N] = u;
-        N++;
-
-        for (int i = g->V[u]; i < g->V[u + 1]; i++)
-            if (mask[g->E[i]])
-                M++;
+void graph_insert_endpoint_lin(graph *g, int u, int v)
+{
+    int p = 0;
+    for (int i = 0; i < g->D[u]; i++)
+    {
+        if (g->V[u][i] > v)
+            break;
+        p++;
     }
 
-    graph *sg = malloc(sizeof(graph));
-    *sg = (graph){.N = N};
+    assert(p == g->D[u] || g->V[u][p] > v);
 
-    sg->V = malloc(sizeof(int) * (N + 1));
-    sg->E = malloc(sizeof(int) * M);
-    sg->W = malloc(sizeof(long long) * N);
-
-    M = 0;
-    for (int u = 0; u < g->N; u++)
+    graph_append_endpoint(g, u, v);
+    for (int i = p + 1; i < g->D[u]; i++)
     {
-        if (!mask[u])
-            continue;
+        g->V[u][i] = g->V[u][i - 1];
+    }
+    g->V[u][p] = v;
+}
 
-        sg->W[forward_mapping[u]] = g->W[u];
-        sg->V[forward_mapping[u]] = M;
+void graph_insert_edge(graph *g, int u, int v)
+{
+    assert(g->A[u] && g->A[v]);
 
-        for (int i = g->V[u]; i < g->V[u + 1]; i++)
+    graph_insert_endpoint_lin(g, u, v);
+    graph_insert_endpoint_lin(g, v, u);
+    g->m++;
+}
+
+void graph_deactivate_vertex(graph *g, int u)
+{
+    assert(g->A[u]);
+
+    for (int i = 0; i < g->D[u]; i++)
+    {
+        int v = g->V[u][i];
+        graph_remove_endpoint_lin(g, v, u);
+    }
+    g->A[u] = 0;
+    g->m -= g->D[u];
+}
+
+void graph_activate_vertex(graph *g, int u)
+{
+    assert(!g->A[u]);
+
+    for (int i = 0; i < g->D[u]; i++)
+    {
+        int v = g->V[u][i];
+        graph_insert_endpoint_lin(g, v, u);
+    }
+    g->A[u] = 1;
+    g->m += g->D[u];
+}
+
+void graph_deactivate_neighborhood(graph *g, int u)
+{
+    assert(g->A[u]);
+
+    for (int i = 0; i < g->D[u]; i++)
+    {
+        int v = g->V[u][i];
+        g->A[v] = 0;
+    }
+    g->A[u] = 0;
+
+    int rm = g->D[u];
+    for (int i = 0; i < g->D[u]; i++)
+    {
+        int v = g->V[u][i];
+        for (int j = 0; j < g->D[v]; j++)
         {
-            int v = g->E[i];
-            if (!mask[v])
+            int w = g->V[v][j];
+            rm++;
+            if (!g->A[w])
                 continue;
-
-            sg->E[M] = forward_mapping[v];
-            M++;
+            graph_remove_endpoint_lin(g, w, v);
+            rm += 2;
         }
     }
-    sg->V[sg->N] = M;
+    g->m -= rm / 2;
+}
 
-    free(forward_mapping);
+void graph_activate_neighborhood(graph *g, int u)
+{
+    assert(g->A[u]);
 
-    return sg;
+    int rm = g->D[u];
+    for (int i = 0; i < g->D[u]; i++)
+    {
+        int v = g->V[u][i];
+        for (int j = 0; j < g->D[v]; j++)
+        {
+            int w = g->V[v][j];
+            rm++;
+            if (!g->A[w])
+                continue;
+            graph_insert_endpoint_lin(g, w, v);
+            rm += 2;
+        }
+    }
+    g->m += rm / 2;
+
+    for (int i = 0; i < g->D[u]; i++)
+    {
+        int v = g->V[u][i];
+        g->A[v] = 0;
+    }
+    g->A[u] = 0;
 }
