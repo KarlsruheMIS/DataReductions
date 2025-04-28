@@ -1,5 +1,5 @@
 
-#include "degree_zero.h"
+#include "degree_one.h"
 
 #include <assert.h>
 
