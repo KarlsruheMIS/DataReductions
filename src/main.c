@@ -3,6 +3,7 @@
 
 #include "degree_zero.h"
 #include "degree_one.h"
+#include "neighborhood_removal.h"
 #include "domination.h"
 
 #include <stdio.h>
@@ -25,9 +26,10 @@ int main(int argc, char **argv)
 
     long long n = g->n, m = g->m;
 
-    reducer *r = reducer_init(g, 3,
+    reducer *r = reducer_init(g, 4,
                               degree_zero,
                               degree_one,
+                              neighborhood_removal,
                               domination);
     reduction_log *l = reducer_reduce(r, g);
 
