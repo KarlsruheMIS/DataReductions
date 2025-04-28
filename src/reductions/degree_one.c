@@ -12,6 +12,7 @@ int degree_one_reduce_graph(graph *g, node_id u, node_weight *offset, buffers *b
 
     *offset = g->W[u];
     d->u = u;
+    d->z = 0;
     d->v = g->V[u][0];
 
     if (g->W[u] >= g->W[d->v])
@@ -36,8 +37,9 @@ void degree_one_restore_graph(graph *g, reconstruction_data *d)
 {
     assert(!g->A[d->u]);
 
-    if (g->W[d->u] >= g->W[d->v])
+    if (!d->z)
     {
+        assert(g->W[d->u] >= g->W[d->v]);
         graph_activate_neighborhood(g, d->u);
     }
     else
