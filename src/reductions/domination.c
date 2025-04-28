@@ -3,7 +3,6 @@
 
 #include <assert.h>
 
-// TODO make faster by only considering smallest degree neighbor
 int domination_reduce_graph(graph *g, node_id u, node_weight *offset,
                             buffers *b, change_list *c, reconstruction_data *d)
 {
@@ -13,7 +12,7 @@ int domination_reduce_graph(graph *g, node_id u, node_weight *offset,
     {
         int v = g->V[u][i];
 
-        if (g->W[v] >= g->W[u] &&
+        if (g->W[v] >= g->W[u] && g->D[v] <= g->D[u] &&
             test_subset_except_one(g->V[v], g->D[v], g->V[u], g->D[u], u))
         {
             *offset = 0;
@@ -23,7 +22,7 @@ int domination_reduce_graph(graph *g, node_id u, node_weight *offset,
             c->n = 0;
             for (node_id j = 0; j < g->D[u]; j++)
                 c->V[c->n++] = g->V[u][j];
-            
+
             return 1;
         }
     }

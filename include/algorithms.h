@@ -28,15 +28,15 @@ static inline node_id test_subset(const node_id *A, node_id a, const node_id *B,
         return 0;
 
     node_id i = 0, j = 0;
-    while (i < a && j < b)
+    while (i < a && j < b && (a - i <= b - j))
     {
-        if (A[i] > B[j])
-        {
-            j++;
-        }
-        else if (A[i] == B[j])
+        if (A[i] == B[j])
         {
             i++;
+            j++;
+        }
+        else if (A[i] > B[j])
+        {
             j++;
         }
         else
@@ -57,13 +57,13 @@ static inline node_id test_subset_except_one(const node_id *A, node_id a, const 
     node_id i = 0, j = 0;
     while (i < a && j < b)
     {
-        if (A[i] > B[j])
-        {
-            j++;
-        }
-        else if (A[i] == B[j])
+        if (A[i] == B[j])
         {
             i++;
+            j++;
+        }
+        else if (A[i] > B[j])
+        {
             j++;
         }
         else if (A[i] == x)
