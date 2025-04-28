@@ -37,6 +37,8 @@ void graph_sort_edges(graph *g);
 
 void graph_add_vertex(graph *g, node_weight w);
 
+void graph_remove_last_added_vertex(graph *g);
+
 void graph_add_edge(graph *g, node_id u, node_id v);
 
 /*
@@ -58,3 +60,5 @@ void graph_activate_vertex(graph *g, node_id u);
 void graph_deactivate_neighborhood(graph *g, node_id u);
 
 void graph_activate_neighborhood(graph *g, node_id u);
+
+int graph_is_neighbor(graph *g, node_id u, node_id v);

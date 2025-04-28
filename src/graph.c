@@ -155,9 +155,17 @@ void graph_add_vertex(graph *g, node_weight w)
     g->n++;
 }
 
+void graph_remove_last_added_vertex(graph *g)
+{
+    assert(!g->A[g->n - 1]);
+
+    g->n--;
+}
+
 void graph_add_edge(graph *g, node_id u, node_id v)
 {
     assert(u < g->n && v < g->n);
+
     graph_append_endpoint(g, u, v);
     graph_append_endpoint(g, v, u);
     g->m += 1;
@@ -227,15 +235,15 @@ void graph_insert_endpoint_lin(graph *g, node_id u, node_id v)
     node_id p = 0;
     for (node_id i = 0; i < g->D[u]; i++)
     {
-        if (g->V[u][i] > v)
+        if (g->V[u][i] >= v)
             break;
         p++;
     }
 
-    assert(p == g->D[u] || g->V[u][p] > v);
+    assert(p == g->D[u] || g->V[u][p] > v && "Error: Added edge that is already existing");
 
     graph_append_endpoint(g, u, v);
-    for (node_id i = p + 1; i < g->D[u]; i++)
+    for (node_id i = g->D[u]; i >= p + 1; i--)
     {
         g->V[u][i] = g->V[u][i - 1];
     }
@@ -331,4 +339,17 @@ void graph_activate_neighborhood(graph *g, node_id u)
         g->A[v] = 0;
     }
     g->A[u] = 0;
+}
+
+int graph_is_neighbor(graph *g, node_id u, node_id v)
+{
+    int pu = lower_bound(g->V[u], g->D[u], v);
+    int uv = pu < g->D[u] && g->V[u][pu] == v;
+
+    int pv = lower_bound(g->V[v], g->D[v], u);
+    int vu = pv < g->D[v] && g->V[v][pv] == u;
+
+    assert(uv == vu);
+
+    return uv;
 }
