@@ -3,30 +3,43 @@
 
 #include <assert.h>
 
-int neighborhood_removal_reduce_graph(graph *g, node_id u, node_weight *offset, buffers *b, change_list *c, reconstruction_data *d)
+int neighborhood_removal_reduce_graph(graph *g, node_id u, node_weight *offset,
+                                      buffers *b, change_list *c, reconstruction_data *d)
 {
     assert(g->A[u]);
 
     long long w_neighborhood = 0;
-    for (node_id i=0; i< g->D[u]; i++)
+    for (node_id i = 0; i < g->D[u]; i++)
     {
         node_id neighbor = g->V[u][i];
-        if (g->A[neighbor])
-        {
-            w_neighborhood += g->W[neighbor];
-            if (w_neighborhood > g->W[u])
-                return 0;
-        }
+
+        w_neighborhood += g->W[neighbor];
+        if (w_neighborhood > g->W[u])
+            return 0;
     }
 
     assert(w_neighborhood <= g->W[u]);
+
     *offset = g->W[u];
     graph_deactivate_neighborhood(g, u);
     d->u = u;
 
     c->n = 0;
-    for (node_id i = 0; i < g->D[d->v]; i++)
-        c->V[c->n++] = g->V[d->v][i];
+    for (node_id i = 0; i < g->D[u]; i++)
+    {
+        node_id v = g->V[u][i];
+
+        for (node_id j = 0; j < g->D[v]; j++)
+        {
+            node_id w = g->V[v][j];
+
+            if (g->A[w])
+                c->V[c->n++] = w;
+
+            if (c->n == c->_a)
+                return 1;
+        }
+    }
 
     return 1;
 }
