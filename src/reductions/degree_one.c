@@ -7,7 +7,7 @@ int degree_one_reduce_graph(graph *g, node_id u, node_weight *offset, buffers *b
 {
     assert(g->A[u]);
 
-    if (g->D[u] > 1)
+    if (g->D[u] != 1)
         return 0;
 
     *offset = g->W[u];
@@ -54,7 +54,6 @@ void degree_one_reconstruct_solution(int *I, reconstruction_data *d)
     if (d->z)
     {
         I[d->u] = 1;
-        I[d->v] = 0;
     }
     else
     {
