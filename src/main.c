@@ -4,6 +4,7 @@
 #include "degree_zero.h"
 #include "degree_one.h"
 #include "neighborhood_removal.h"
+#include "twin.h"
 #include "domination.h"
 
 #include <stdio.h>
@@ -26,10 +27,11 @@ int main(int argc, char **argv)
 
     long long n = g->n, m = g->m;
 
-    reducer *r = reducer_init(g, 4,
+    reducer *r = reducer_init(g, 5,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
+                              twin,
                               domination);
     reduction_log *l = reducer_reduce(r, g);
 
@@ -50,7 +52,7 @@ int main(int argc, char **argv)
 
     double elapsed = get_wtime() - start;
 
-    printf("%45s %10lld %10lld -> %10lld %10lld (%10lld) %3.4lf\n",
+    printf("%45s %10lld %10lld -> %10lld %10lld (%10lld) %8.4lf\n",
            argv[1] + offset, n, m, n_reduced, g->m, l->offset, elapsed);
 
     reducer_free_reduction_log(l);
