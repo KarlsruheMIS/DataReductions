@@ -36,7 +36,7 @@ typedef struct
 typedef struct
 {
     // Commonly used variables for most reductions
-    node_id u, v, w, x, y, z;
+    node_id u, v, w, x, y, z, n;
     node_id e1, e2, e3, e4;
     void *data; // For additional data (must be allocated manually)
 } reconstruction_data;
