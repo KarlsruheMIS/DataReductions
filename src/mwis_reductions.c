@@ -1,0 +1,127 @@
+#pragma once
+
+#include "mwis_reductions.h"
+#include "graph.h"
+#include "reducer.h"
+
+#include "degree_zero.h"
+#include "degree_one.h"
+#include "triangle.h"
+#include "v_shape.h"
+#include "neighborhood_removal.h"
+#include "twin.h"
+#include "domination.h"
+
+typedef struct
+{
+    long long n_original;
+    graph *g; // reduced but not remaped graph
+    reduction_log *rl;
+    int *forward_map;
+    int *reverse_map;
+} reduction_data;
+
+void *mwis_reduction_reduce_graph(graph *g)
+{
+
+    long long orginal_size = g->n;
+    reducer *r = reducer_init(g, 7,
+                              degree_zero,
+                              degree_one,
+                              neighborhood_removal,
+                              triangle,
+                              v_shape,
+                              twin,
+                              domination);
+    reduction_log *l = reducer_reduce(r, g);
+    reducer_free(r);
+
+    // build reduced graph
+    node_id n_reduced = 0;
+    graph *rg = graph_init();
+    node_id *forward_map = malloc(sizeof(node_id) * g->n);
+    node_id *reverse_map = malloc(sizeof(node_id) * g->n);
+    for (node_id i = 0; i < g->n; i++)
+    {
+        if (g->A[i])
+        {
+            forward_map[i] = n_reduced++;
+            reverse_map[n_reduced] = i;
+            graph_add_vertex(rg, g->W[i]);
+        }
+        else
+        {
+            forward_map[i] = g->n;
+        }
+        assert(n_reduced <= g->n);
+    }
+    reverse_map = realloc(reverse_map, sizeof(node_id) * n_reduced);
+
+    // add all edges in reduced graph rg
+    for (node_id u = 0; u < n_reduced; u++)
+    {
+        node_id ou = reverse_map[u]; // original graph vertex
+        for (node_id j = 0; j < g->D[ou]; j++)
+        {
+            node_id v = forward_map[g->V[ou][j]];
+            graph_add_edge(rg, u, v);
+        }
+    }
+    graph_sort_edges(rg);
+
+    reduction_data *rd = malloc(sizeof(reduction_data));
+    *rd = (reduction_data){
+        .n_original = orginal_size,
+        .forward_map = forward_map,
+        .reverse_map = reverse_map,
+        .rl = l,
+        .g = rg,
+    };
+    graph tmp = *rg;
+    *rg = *g;
+    *g = tmp;
+
+    return (void *)rd;
+}
+
+int *mwis_reduction_lift_solution(int *rI, void *rd)
+{
+    reduction_data *d = (reduction_data *)rd;
+
+    // get reduced solution on original graph
+    int *I = malloc(sizeof(int) * d->g->n);
+    for (node_id i = 0; i < d->g->n; i++)
+    {
+        if (!d->g->A[i])
+            I[i] = 0;
+        else
+            I[i] = rI[d->forward_map[i]];
+    }
+
+    // lift solution by reconstructing the reductions
+    for (int i = d->rl->n - 1; i >= 0; i--)
+    {
+        reduction rule = d->rl->Log_rule[i];
+        rule.reconstruct(I, d->rl->Log_data + i);
+    }
+
+    I = realloc(I, sizeof(node_id) * d->n_original);
+    return I;
+}
+
+void mwis_reduction_restore_graph(graph *rg, void *rd)
+{
+    reduction_data *d = (reduction_data *)rd;
+
+    for (int i = d->rl->n - 1; i >= 0; i--)
+    {
+        reduction rule = d->rl->Log_rule[i];
+        rule.restore(rg, d->rl->Log_data + i);
+    }
+}
+
+void mwis_reduction_free(void *rd)
+{
+    reduction_data *d = (reduction_data *)rd;
+    reducer_free_reduction_log(d->rl);
+}
