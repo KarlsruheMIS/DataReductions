@@ -18,14 +18,14 @@ DEP := $(sort $(DEP))
 vpath %.c src src/reductions
 vpath %.h include include/reductions
 
-all : mwis_reduce mwis_reductions.a
+all : mwis_reduce libmwis_reductions.a
 
 -include $(DEP:.o=.d)
 
 mwis_reduce : $(OBJ_REDUCE)
 	$(CC) $(CFLAGS) -o $@ $^
 
-mwis_reductions.a : $(OBJ_LIB)
+libmwis_reductions.a : $(OBJ_LIB)
 	ar r $@ $^
 
 bin/%.o : %.c
@@ -33,4 +33,4 @@ bin/%.o : %.c
 
 .PHONY : clean
 clean :
-	rm -f mwis_reduce mwis_reductions.a $(DEP) $(DEP:.o=.d)
+	rm -f mwis_reduce libmwis_reductions.a $(DEP) $(DEP:.o=.d)
