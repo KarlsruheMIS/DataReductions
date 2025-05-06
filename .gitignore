@@ -1,6 +1,5 @@
 .vscode/*
 bin/*
 !bin/.gitignore
-PILS
-KERNEL
-REDUCE
+*.a
+mwis_reduce

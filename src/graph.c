@@ -243,7 +243,7 @@ void graph_insert_endpoint_lin(graph *g, node_id u, node_id v)
     assert(p == g->D[u] || g->V[u][p] > v && "Error: Added edge that is already existing");
 
     graph_append_endpoint(g, u, v);
-    for (node_id i = g->D[u]; i >= p + 1; i--)
+    for (node_id i = g->D[u] - 1; i >= p + 1; i--)
     {
         g->V[u][i] = g->V[u][i - 1];
     }

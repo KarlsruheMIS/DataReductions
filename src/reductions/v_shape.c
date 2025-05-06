@@ -35,6 +35,7 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
 
     d->u = u;
     *offset = g->W[u];
+    d->data = NULL;
 
     if (g->W[u] < g->W[d->x])
     {
@@ -72,7 +73,7 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
                 c->V[c->n++] = w;
             }
         }
-        d->data = (void *)added_edges; 
+        d->data = (void *)added_edges;
 
         graph_remove_edge(g, u, d->x);
         graph_remove_edge(g, u, d->y);
@@ -98,21 +99,21 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
         for (node_id i = 0; i < g->D[d->x]; i++)
         {
             node_id w = g->V[d->x][i];
-            b->buffers[0][w] = b->t;
+            b->fast_sets[0][w] = b->t;
         }
         for (node_id i = 0; i < g->D[d->y]; i++)
         {
             node_id w = g->V[d->y][i];
 
-            if (b->buffers[0][w] < b->t)
+            if (b->fast_sets[0][w] < b->t)
             {
-                b->buffers[0][w] = b->t;
+                b->fast_sets[0][w] = b->t;
                 graph_insert_edge(g, d->x, w);
                 added_edges[d->n++] = w;
                 c->V[c->n++] = w;
             }
         }
-        d->data = (void *)added_edges; 
+        d->data = (void *)added_edges;
     }
     else
     {
@@ -169,7 +170,6 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
         }
     }
 
-
     return 1;
 }
 
@@ -179,7 +179,7 @@ void v_shape_restore_graph(graph *g, reconstruction_data *d)
 
     if (d->z == 1)
     {
-        node_id * added_edges = (node_id *)d->data;
+        node_id *added_edges = (node_id *)d->data;
         for (node_id i = 0; i < d->n; i++)
         {
             node_id v = added_edges[i];
@@ -196,7 +196,7 @@ void v_shape_restore_graph(graph *g, reconstruction_data *d)
     {
         graph_activate_vertex(g, d->u);
 
-        node_id * added_edges = (node_id *)d->data;
+        node_id *added_edges = (node_id *)d->data;
         for (node_id i = 0; i < d->n; i++)
         {
             node_id v = added_edges[i];
@@ -250,6 +250,6 @@ void v_shape_reconstruct_solution(int *I, reconstruction_data *d)
 
 void v_shape_clean(reconstruction_data *d)
 {
-    node_id * added_edges = (node_id *)d->data;
+    node_id *added_edges = (node_id *)d->data;
     free(added_edges);
 }
