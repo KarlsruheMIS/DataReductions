@@ -24,7 +24,7 @@ typedef struct
 
 void *mwis_reduction_reduce_graph(graph *g)
 {
-
+    graph_sort_edges(g);
     long long orginal_size = g->n;
     reducer *r = reducer_init(g, 7,
                               degree_zero,

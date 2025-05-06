@@ -1,7 +1,7 @@
 SHELL = /bin/bash
 
 CC = gcc
-CFLAGS = -g -std=gnu17 -O3 -march=native -I include -I include/reductions
+CFLAGS = -g -std=gnu17 -O3 -I include -I include/reductions
 
 OBJ_SHARED = graph.o reducer.o reduction.o \
 			 degree_zero.o degree_one.o domination.o neighborhood_removal.o twin.o \
