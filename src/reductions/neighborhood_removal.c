@@ -1,4 +1,3 @@
-
 #include "neighborhood_removal.h"
 
 #include <assert.h>

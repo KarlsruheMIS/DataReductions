@@ -1,4 +1,3 @@
-
 #include "degree_zero.h"
 
 #include <assert.h>

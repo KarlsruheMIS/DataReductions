@@ -1,4 +1,3 @@
-
 #include "triangle.h"
 #include "algorithms.h"
 

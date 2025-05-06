@@ -1,5 +1,7 @@
 #pragma once
 
+#define __GRAPH__
+
 #include "defs.h"
 
 #include <stdio.h>

@@ -1,4 +1,3 @@
-
 #include "v_shape.h"
 #include "algorithms.h"
 

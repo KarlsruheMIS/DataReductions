@@ -1,8 +1,6 @@
-#pragma once
-
-#include "mwis_reductions.h"
 #include "graph.h"
 #include "reducer.h"
+#include "mwis_reductions.h"
 
 #include "degree_zero.h"
 #include "degree_one.h"
@@ -12,10 +10,13 @@
 #include "twin.h"
 #include "domination.h"
 
+#include <assert.h>
+#include <stdlib.h>
+
 typedef struct
 {
     long long n_original;
-    graph *g; // reduced but not remaped graph
+    graph *g; // reduced but not remapped graph
     reduction_log *rl;
     int *forward_map;
     int *reverse_map;

@@ -1,16 +1,18 @@
 #pragma once
 
+#ifndef __NODE_TYPES__
+#define __NODE_TYPES__
+
 #define node_id int
 #define node_weight long long
 
-/*
-    Dynamic graph structure for reductions
+#endif
 
-    For fast construction, use the add_vertex and add_edge functions
-    When finished, call sort_edges to sort each neighborhood and
-    remove duplicate edges. Once constructed, use the other methods
-    (remove_edge, insert_edge, deactivate_vertex, etc.) to alter the
-    graph while maintaining sorted neighborhoods.
+#ifndef __GRAPH__
+#define __GRAPH__
+
+/*
+    Dynamic graph structure used for reductions
 */
 
 typedef struct
@@ -32,6 +34,7 @@ void graph_add_edge(graph *g, node_id u, node_id v);
 
 void graph_free(graph *g);
 
+#endif
 
 /*
     Main functions for reduction process
