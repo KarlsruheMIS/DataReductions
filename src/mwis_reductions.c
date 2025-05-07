@@ -46,8 +46,9 @@ void *mwis_reduction_reduce_graph(graph *g)
     {
         if (g->A[i])
         {
-            forward_map[i] = n_reduced++;
+            forward_map[i] = n_reduced;
             reverse_map[n_reduced] = i;
+            n_reduced++;
             graph_add_vertex(rg, g->W[i]);
         }
         else
