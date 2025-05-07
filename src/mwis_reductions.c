@@ -125,7 +125,11 @@ void mwis_reduction_restore_graph(graph *rg, void *rd)
 void mwis_reduction_free(void *rd)
 {
     reduction_data *d = (reduction_data *)rd;
+    graph_free(d->g);
     reducer_free_reduction_log(d->rl);
+    free(d->forward_map);
+    free(d->reverse_map);
+    free(d);
 }
 
 long long mwis_reduction_get_offset(void *rd)
