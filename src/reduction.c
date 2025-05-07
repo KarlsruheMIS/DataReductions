@@ -29,6 +29,14 @@ void reduction_data_init(graph *g, buffers **b, change_list **c)
     (*c)->V = malloc(sizeof(node_id) * (*c)->_a);
 }
 
+void reduction_data_reset_fast_sets(buffers *b)
+{
+    b->t = 0;
+    for (int i = 0; i < N_BUFFERS; i++)
+        for (node_id j = 0; j < b->_a; j++)
+            b->fast_sets[i][j] = 0;
+}
+
 void reduction_data_increase(buffers *b, change_list *c)
 {
     b->_a *= 2;

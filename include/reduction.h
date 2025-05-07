@@ -90,6 +90,8 @@ typedef struct
 
 void reduction_data_init(graph *g, buffers **b, change_list **c);
 
+void reduction_data_reset_fast_sets(buffers *b);
+
 void reduction_data_increase(buffers *b, change_list *c);
 
 void reduction_data_free(buffers *b, change_list *c);

@@ -150,23 +150,16 @@ void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l)
         {
             u = r->Queues[rule][--r->Queue_count[rule]];
             r->In_queues[rule][u] = 0;
-        }
 
-        if (!g->A[u])
-            continue;
+            if (!g->A[u])
+                continue;
+        }
 
         int res = r->Rule[rule].reduce(g, u, &l->Offset[l->n], r->b, r->c, &l->Log_data[l->n]);
-
         r->b->t++;
 
-        // refactor this?
         if (r->b->t == (1 << 30))
-        {
-            r->b->t = 0;
-            for (int i = 0; i < N_BUFFERS; i++)
-                for (node_id j = 0; j < r->b->_a; j++)
-                    r->b->fast_sets[i][j] = 0;
-        }
+            reduction_data_reset_fast_sets(r->b);
 
         if (res)
         {
@@ -205,8 +198,19 @@ void reducer_exclude_vertex(reducer *r, graph *g, reduction_log *l, node_id u)
 
 void reducer_restore_graph(graph *g, reduction_log *l, long long t)
 {
+    while (l->n > t)
+    {
+        l->n--;
+        l->Log_rule[l->n].restore(g, l->Log_data + l->n);
+        l->Log_rule[l->n].clean(l->Log_data + l->n);
+        l->offset -= l->Offset[l->n];
+    }
 }
 
 void reducer_lift_solution(reduction_log *l, int *I)
 {
+    for (int i = l->n - 1; i >= 0; i--)
+    {
+        l->Log_rule[i].reconstruct(I, l->Log_data + i);
+    }
 }
