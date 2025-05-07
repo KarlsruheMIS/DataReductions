@@ -126,3 +126,9 @@ void mwis_reduction_free(void *rd)
     reduction_data *d = (reduction_data *)rd;
     reducer_free_reduction_log(d->rl);
 }
+
+long long mwis_reduction_get_offset(void *rd)
+{
+    reduction_data *d = (reduction_data *)rd;
+    return d->rl->offset;
+}

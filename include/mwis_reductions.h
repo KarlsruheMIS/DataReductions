@@ -47,3 +47,5 @@ int *mwis_reduction_lift_solution(int *rI, void *reduction_data);
 void mwis_reduction_restore_graph(graph *rg, void *reduction_data);
 
 void mwis_reduction_free(void *reduction_data);
+
+long long mwis_reduction_get_offset(void *reduction_data);
