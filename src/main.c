@@ -8,6 +8,7 @@
 #include "neighborhood_removal.h"
 #include "twin.h"
 #include "domination.h"
+#include "unconfined.h"
 #include "simultaneous_set.h"
 
 #include <stdio.h>
@@ -28,7 +29,7 @@ int main(int argc, char **argv)
 
     long long n = g->n, m = g->m;
 
-    reducer *r = reducer_init(g, 6,
+    reducer *r = reducer_init(g, 9,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
@@ -36,6 +37,7 @@ int main(int argc, char **argv)
                               v_shape,
                               domination,
                               twin,
+                              unconfined,
                               simultaneous_set);
 
     double start = get_wtime();

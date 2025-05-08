@@ -67,7 +67,7 @@ void reduction_data_free(buffers *b, change_list *c)
 
 void reduction_data_reset_fast_sets(buffers *b)
 {
-    b->t = 0;
+    b->t = 1;
     for (int i = 0; i < N_BUFFERS; i++)
         for (node_id j = 0; j < b->_a; j++)
             b->fast_sets[i][j] = 0;
