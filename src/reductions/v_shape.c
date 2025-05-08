@@ -66,7 +66,7 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
         }
         d->data = (void *)added_edges;
 
-        reduction_data_queue_distance_one(g, u, c);
+        reduction_data_queue_distance_two(g, u, c);
 
         graph_remove_edge(g, u, d->x);
         graph_remove_edge(g, u, d->y);
@@ -142,7 +142,7 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
 
             graph_deactivate_neighborhood(g, u);
 
-            reduction_data_queue_distance_one(g, d->v, c);
+            reduction_data_queue_distance_two(g, d->v, c);
         }
     }
 

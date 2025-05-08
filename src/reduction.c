@@ -89,6 +89,9 @@ void reduction_data_queue_distance_one(graph *g, node_id u, change_list *c)
 
 void reduction_data_queue_distance_two(graph *g, node_id u, change_list *c)
 {
+    if (g->A[u] && c->n < c->_a)
+        c->V[c->n++] = u;
+
     for (node_id i = 0; i < g->D[u]; i++)
     {
         node_id v = g->V[u][i];
