@@ -155,6 +155,9 @@ void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l)
                 continue;
         }
 
+        // printf("\r%10lld %10lld %2d/%2d %10d", g->n, g->m, rule + 1, r->n_rules, r->Queue_count[r->n_rules - 1]);
+        // fflush(stdout);
+
         l->Offset[l->n] = 0;
         r->c->n = 0;
         int res = r->Rule[rule].reduce(g, u, &l->Offset[l->n], r->b, r->c, &l->Log_data[l->n]);

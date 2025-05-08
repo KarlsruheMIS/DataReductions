@@ -315,7 +315,7 @@ void graph_deactivate_neighborhood(graph *g, node_id u)
 
 void graph_activate_neighborhood(graph *g, node_id u)
 {
-    assert(g->A[u]);
+    assert(!g->A[u]);
 
     long long rm = g->D[u];
     for (node_id i = 0; i < g->D[u]; i++)
@@ -328,7 +328,7 @@ void graph_activate_neighborhood(graph *g, node_id u)
             if (!g->A[w])
                 continue;
             graph_insert_endpoint_lin(g, w, v);
-            rm += 2;
+            rm++;
         }
     }
     g->m += rm / 2;
@@ -336,9 +336,9 @@ void graph_activate_neighborhood(graph *g, node_id u)
     for (node_id i = 0; i < g->D[u]; i++)
     {
         node_id v = g->V[u][i];
-        g->A[v] = 0;
+        g->A[v] = 1;
     }
-    g->A[u] = 0;
+    g->A[u] = 1;
 }
 
 int graph_is_neighbor(graph *g, node_id u, node_id v)

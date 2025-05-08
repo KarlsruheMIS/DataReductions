@@ -80,8 +80,8 @@ void triangle_restore_graph(graph *g, reconstruction_data *d)
     }
     else if (d->z == 2)
     {
-        graph_activate_vertex(g, d->u);
         graph_activate_vertex(g, d->x);
+        graph_activate_vertex(g, d->u);
 
         g->W[d->y] += g->W[d->u];
     }

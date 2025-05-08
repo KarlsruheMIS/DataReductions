@@ -38,6 +38,7 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
     if (g->W[u] < g->W[d->x])
     {
         d->z = 1;
+        d->n = 0;
 
         node_id *added_edges = malloc(sizeof(node_id) * (g->D[d->x] + g->D[d->y]));
 
@@ -65,7 +66,7 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
         }
         d->data = (void *)added_edges;
 
-        reduction_data_queue_distance_two(g, u, c);
+        reduction_data_queue_distance_one(g, u, c);
 
         graph_remove_edge(g, u, d->x);
         graph_remove_edge(g, u, d->y);
@@ -76,6 +77,7 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
     else if (g->W[u] < g->W[d->y])
     {
         d->z = 2;
+        d->n = 0;
 
         node_id *added_edges = malloc(sizeof(node_id) * (g->D[d->x] + g->D[d->y]));
 
@@ -149,8 +151,6 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
 
 void v_shape_restore_graph(graph *g, reconstruction_data *d)
 {
-    assert(!g->A[d->u]);
-
     if (d->z == 1)
     {
         node_id *added_edges = (node_id *)d->data;
@@ -174,7 +174,7 @@ void v_shape_restore_graph(graph *g, reconstruction_data *d)
         for (node_id i = 0; i < d->n; i++)
         {
             node_id v = added_edges[i];
-            graph_remove_edge(g, d->u, v);
+            graph_remove_edge(g, d->x, v);
         }
 
         g->W[d->y] += g->W[d->u];

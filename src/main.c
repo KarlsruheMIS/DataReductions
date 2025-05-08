@@ -8,6 +8,7 @@
 #include "neighborhood_removal.h"
 #include "twin.h"
 #include "domination.h"
+#include "simultaneous_set.h"
 
 #include <stdio.h>
 #include <time.h>
@@ -25,19 +26,21 @@ int main(int argc, char **argv)
     graph *g = graph_parse(f);
     fclose(f);
 
-    double start = get_wtime();
-
     long long n = g->n, m = g->m;
 
-    reducer *r = reducer_init(g, 7,
+    reducer *r = reducer_init(g, 6,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
                               triangle,
                               v_shape,
+                              domination,
                               twin,
-                              domination);
+                              simultaneous_set);
+
+    double start = get_wtime();
     reduction_log *l = reducer_reduce(r, g);
+    double elapsed = get_wtime() - start;
 
     long long n_reduced = 0;
     for (node_id i = 0; i < g->n; i++)
@@ -54,10 +57,10 @@ int main(int argc, char **argv)
         p++;
     }
 
-    double elapsed = get_wtime() - start;
-
     printf("%45s %10lld %10lld -> %10lld %10lld (%10lld) %8.4lf\n",
            argv[1] + offset, n, m, n_reduced, g->m, l->offset, elapsed);
+
+    reducer_restore_graph(g, l, 0);
 
     reducer_free_reduction_log(l);
     reducer_free(r);

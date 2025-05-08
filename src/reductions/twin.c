@@ -17,7 +17,7 @@ int twin_reduce_graph(graph *g, node_id u, node_weight *offset,
             md = v;
     }
 
-    if (md < 0)
+    if (md < 0 || g->D[md] > MAX_TWIN)
         return 0;
 
     for (node_id i = 0; i < g->D[md]; i++)
