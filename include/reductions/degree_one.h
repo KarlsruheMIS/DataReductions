@@ -4,7 +4,8 @@
 #include "reduction.h"
 #include "graph.h"
 
-int degree_one_reduce_graph(graph *g, node_id u, node_weight *offset, buffers *b, change_list *c, reconstruction_data *d);
+int degree_one_reduce_graph(graph *g, node_id u, node_weight *offset,
+                            buffers *b, change_list *c, reconstruction_data *d);
 
 void degree_one_restore_graph(graph *g, reconstruction_data *d);
 

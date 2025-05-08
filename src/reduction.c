@@ -29,14 +29,6 @@ void reduction_data_init(graph *g, buffers **b, change_list **c)
     (*c)->V = malloc(sizeof(node_id) * (*c)->_a);
 }
 
-void reduction_data_reset_fast_sets(buffers *b)
-{
-    b->t = 0;
-    for (int i = 0; i < N_BUFFERS; i++)
-        for (node_id j = 0; j < b->_a; j++)
-            b->fast_sets[i][j] = 0;
-}
-
 void reduction_data_increase(buffers *b, change_list *c)
 {
     b->_a *= 2;
@@ -71,4 +63,45 @@ void reduction_data_free(buffers *b, change_list *c)
 
     free(c->V);
     free(c);
+}
+
+void reduction_data_reset_fast_sets(buffers *b)
+{
+    b->t = 0;
+    for (int i = 0; i < N_BUFFERS; i++)
+        for (node_id j = 0; j < b->_a; j++)
+            b->fast_sets[i][j] = 0;
+}
+
+void reduction_data_queue_distance_one(graph *g, node_id u, change_list *c)
+{
+    for (node_id i = 0; i < g->D[u]; i++)
+    {
+        node_id v = g->V[u][i];
+
+        if (g->A[v])
+            c->V[c->n++] = v;
+
+        if (c->n == c->_a)
+            return;
+    }
+}
+
+void reduction_data_queue_distance_two(graph *g, node_id u, change_list *c)
+{
+    for (node_id i = 0; i < g->D[u]; i++)
+    {
+        node_id v = g->V[u][i];
+
+        for (node_id j = 0; j < g->D[v]; j++)
+        {
+            node_id w = g->V[v][j];
+
+            if (g->A[w])
+                c->V[c->n++] = w;
+
+            if (c->n == c->_a)
+                return;
+        }
+    }
 }

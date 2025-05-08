@@ -4,7 +4,8 @@
 #include "reduction.h"
 #include "graph.h"
 
-int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset, buffers *b, change_list *c, reconstruction_data *d);
+int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
+                         buffers *b, change_list *c, reconstruction_data *d);
 
 void v_shape_restore_graph(graph *g, reconstruction_data *d);
 

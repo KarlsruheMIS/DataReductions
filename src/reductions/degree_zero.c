@@ -12,7 +12,6 @@ int degree_zero_reduce_graph(graph *g, node_id u, node_weight *offset, buffers *
     *offset = g->W[u];
     graph_deactivate_vertex(g, u);
     d->u = u;
-    c->n = 0;
 
     return 1;
 }

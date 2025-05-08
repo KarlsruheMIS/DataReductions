@@ -155,6 +155,8 @@ void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l)
                 continue;
         }
 
+        l->Offset[l->n] = 0;
+        r->c->n = 0;
         int res = r->Rule[rule].reduce(g, u, &l->Offset[l->n], r->b, r->c, &l->Log_data[l->n]);
         r->b->t++;
 

@@ -19,9 +19,7 @@ int domination_reduce_graph(graph *g, node_id u, node_weight *offset,
             d->u = u;
             graph_deactivate_vertex(g, u);
 
-            c->n = 0;
-            for (node_id j = 0; j < g->D[u]; j++)
-                c->V[c->n++] = g->V[u][j];
+            reduction_data_queue_distance_one(g, u, c);
 
             return 1;
         }

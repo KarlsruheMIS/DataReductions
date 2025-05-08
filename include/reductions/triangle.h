@@ -4,7 +4,8 @@
 #include "reduction.h"
 #include "graph.h"
 
-int triangle_reduce_graph(graph *g, node_id u, node_weight *offset, buffers *b, change_list *c, reconstruction_data *d);
+int triangle_reduce_graph(graph *g, node_id u, node_weight *offset,
+                          buffers *b, change_list *c, reconstruction_data *d);
 
 void triangle_restore_graph(graph *g, reconstruction_data *d);
 

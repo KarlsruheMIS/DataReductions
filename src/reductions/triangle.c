@@ -3,7 +3,8 @@
 
 #include <assert.h>
 
-int triangle_reduce_graph(graph *g, node_id u, node_weight *offset, buffers *b, change_list *c, reconstruction_data *d)
+int triangle_reduce_graph(graph *g, node_id u, node_weight *offset,
+                          buffers *b, change_list *c, reconstruction_data *d)
 {
     assert(g->A[u]);
 
@@ -28,7 +29,7 @@ int triangle_reduce_graph(graph *g, node_id u, node_weight *offset, buffers *b, 
         return 0;
 
     // flag to track the reduction case
-    d->z = 0; 
+    d->z = 0;
 
     d->u = u;
     *offset = g->W[u];
@@ -42,9 +43,7 @@ int triangle_reduce_graph(graph *g, node_id u, node_weight *offset, buffers *b, 
         g->W[d->x] -= g->W[u];
         g->W[d->y] -= g->W[u];
 
-        c->n = 2;
-        c->V[0] = d->x;
-        c->V[1] = d->y;
+        reduction_data_queue_distance_one(g, u, c);
     }
     else if (g->W[u] < g->W[d->y])
     {
@@ -55,18 +54,7 @@ int triangle_reduce_graph(graph *g, node_id u, node_weight *offset, buffers *b, 
 
         g->W[d->y] -= g->W[u];
 
-        c->n = 1;
-        c->V[0] = d->y;
-        for (node_id i = 0; i < g->D[d->x]; i++)
-        {
-            node_id w = g->V[d->x][i];
-
-            if (g->A[w])
-                c->V[c->n++] = w;
-
-            if (c->n == c->_a)
-                return 1;
-        }
+        reduction_data_queue_distance_one(g, d->x, c);
     }
     else
     {
@@ -74,22 +62,7 @@ int triangle_reduce_graph(graph *g, node_id u, node_weight *offset, buffers *b, 
 
         graph_deactivate_neighborhood(g, u);
 
-        c->n = 0;
-        for (node_id i = 0; i < g->D[u]; i++)
-        {
-            node_id v = g->V[u][i];
-
-            for (node_id j = 0; j < g->D[v]; j++)
-            {
-                node_id w = g->V[v][j];
-
-                if (g->A[w])
-                    c->V[c->n++] = w;
-
-                if (c->n == c->_a)
-                    return 1;
-            }
-        }
+        reduction_data_queue_distance_two(g, u, c);
     }
 
     return 1;
