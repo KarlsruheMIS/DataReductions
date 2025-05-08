@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 
     long long n = g->n, m = g->m;
 
-    reducer *r = reducer_init(g, 9,
+    reducer *r = reducer_init(g, 8,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,

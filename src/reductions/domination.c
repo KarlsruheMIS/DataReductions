@@ -61,7 +61,7 @@ int domination_reduce_graph(graph *g, node_id u, node_weight *offset,
     {
         int v = g->V[md][i];
 
-        if (v != u && g->W[v] <= g->W[u] && g->D[v] >= g->D[u] &&
+        if (v != u && g->W[v] <= g->W[u] && g->D[v] >= g->D[u] && graph_is_neighbor(g, u, v) &&
             set_is_subset_except_one(g->V[u], g->D[u], g->V[v], g->D[v], v))
         {
             *offset = 0;

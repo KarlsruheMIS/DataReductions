@@ -42,7 +42,7 @@ int triangle_reduce_graph(graph *g, node_id u, node_weight *offset,
         g->W[d->x] -= g->W[u];
         g->W[d->y] -= g->W[u];
 
-        reduction_data_queue_distance_one(g, u, c);
+        reduction_data_queue_distance_two(g, u, c);
     }
     else if (g->W[u] < g->W[d->y])
     {
@@ -53,7 +53,7 @@ int triangle_reduce_graph(graph *g, node_id u, node_weight *offset,
 
         g->W[d->y] -= g->W[u];
 
-        reduction_data_queue_distance_one(g, d->x, c);
+        reduction_data_queue_distance_one(g, d->y, c);
     }
     else
     {
