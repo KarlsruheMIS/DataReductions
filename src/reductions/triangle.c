@@ -24,8 +24,7 @@ int triangle_reduce_graph(graph *g, node_id u, node_weight *offset,
     }
 
     // check if triangle
-    node_id pos = lower_bound(g->V[d->x], g->D[d->x], d->y);
-    if (pos >= g->D[d->x] || g->V[d->x][pos] != d->y)
+    if (!graph_is_neighbor(g, d->x, d->y))
         return 0;
 
     // flag to track the reduction case

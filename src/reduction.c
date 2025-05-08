@@ -75,15 +75,15 @@ void reduction_data_reset_fast_sets(buffers *b)
 
 void reduction_data_queue_distance_one(graph *g, node_id u, change_list *c)
 {
+    if (g->A[u] && c->n < c->_a)
+        c->V[c->n++] = u;
+
     for (node_id i = 0; i < g->D[u]; i++)
     {
         node_id v = g->V[u][i];
 
-        if (g->A[v])
+        if (g->A[v] && c->n < c->_a)
             c->V[c->n++] = v;
-
-        if (c->n == c->_a)
-            return;
     }
 }
 
@@ -92,16 +92,15 @@ void reduction_data_queue_distance_two(graph *g, node_id u, change_list *c)
     for (node_id i = 0; i < g->D[u]; i++)
     {
         node_id v = g->V[u][i];
+        if (g->A[v] && c->n < c->_a)
+            c->V[c->n++] = v;
 
         for (node_id j = 0; j < g->D[v]; j++)
         {
             node_id w = g->V[v][j];
 
-            if (g->A[w])
+            if (g->A[w] && c->n < c->_a)
                 c->V[c->n++] = w;
-
-            if (c->n == c->_a)
-                return;
         }
     }
 }
