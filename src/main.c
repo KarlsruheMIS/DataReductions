@@ -3,13 +3,14 @@
 
 #include "degree_zero.h"
 #include "degree_one.h"
-#include "triangle.h"
-#include "v_shape.h"
-#include "neighborhood_removal.h"
-#include "twin.h"
 #include "domination.h"
-#include "unconfined.h"
+#include "neighborhood_removal.h"
+#include "simplicial_vertex.h"
 #include "simultaneous_set.h"
+#include "triangle.h"
+#include "twin.h"
+#include "unconfined.h"
+#include "v_shape.h"
 
 #include <stdio.h>
 #include <time.h>
@@ -29,7 +30,7 @@ int main(int argc, char **argv)
 
     long long n = g->n, m = g->m;
 
-    reducer *r = reducer_init(g, 8,
+    reducer *r = reducer_init(g, 9,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
@@ -37,6 +38,7 @@ int main(int argc, char **argv)
                               v_shape,
                               domination,
                               twin,
+                              simplicial_vertex,
                               unconfined,
                               simultaneous_set);
 
