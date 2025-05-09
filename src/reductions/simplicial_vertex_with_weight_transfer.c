@@ -12,6 +12,9 @@ int simplicial_vertex_with_weight_transfer_reduce_graph(graph *g, node_id u, nod
     if (g->D[u] > MAX_SIMPLICIAL_VERTEX)
         return 0;
 
+    // int *fs = b->fast_sets[0];
+    // int t = b->t;
+
     for (node_id i = 0; i < g->D[u]; i++)
     {
         node_id v = g->V[u][i];
@@ -21,13 +24,12 @@ int simplicial_vertex_with_weight_transfer_reduce_graph(graph *g, node_id u, nod
         if (g->D[v] < g->D[u])
             return 0;
 
-        b->fast_sets[0][v] = b->t;
+        // fs[v] = t;
     }
-    b->fast_sets[0][u] = b->t;
+    // fs[u] = t;
     node_id max_weight_v_simplicial = u;
     int higher_weight_vertex = 0;
 
-    // check if neighborhood is a clique
     for (node_id i = 0; i < g->D[u]; i++)
     {
         node_id v = g->V[u][i];
@@ -40,13 +42,21 @@ int simplicial_vertex_with_weight_transfer_reduce_graph(graph *g, node_id u, nod
                 higher_weight_vertex = 1;
         }
 
-        for (node_id j = 0; j < g->D[v]; j++)
-        {
-            node_id w = g->V[v][j];
+        // check if neighborhood is a clique via fast set
+        // int neighbor_count = 0;
+        // for (node_id j = 0; j < g->D[v]; j++)
+        // {
+        //     node_id w = g->V[v][j];
 
-            if (b->fast_sets[0][w] != b->t)
-                return 0;
-        }
+        //     if (fs[w] == t)
+        //         neighbor_count += 1; 
+        // }
+        // if (neighbor_count != g->D[u])
+        //     return 0;
+
+        // check if neighborhood is a clique via is_subset
+        if (!set_is_subset_except_one(g->V[u], g->D[u], g->V[v], g->D[v], v))
+            return 0;
     }
 
     *offset = g->W[max_weight_v_simplicial];

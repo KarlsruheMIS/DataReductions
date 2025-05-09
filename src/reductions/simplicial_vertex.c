@@ -16,31 +16,19 @@ int simplicial_vertex_reduce_graph(graph *g, node_id u, node_weight *offset,
         node_id v = g->V[u][i];
 
         // if d[v] is smaller than d[u], then N(u) can not be clique
-        // if v and u have same degree, both are potentially simplicial then, we want to check only for the highest weight vertex
-        if (g->D[v] < g->D[u] || (g->D[v] == g->D[u] && g->W[v] > g->W[u]))
+        // u has to be the highest weight vertex
+        if (g->D[v] < g->D[u] || (g->W[v] > g->W[u]))
             return 0;
-
-        b->fast_sets[0][v] = b->t;
     }
-    b->fast_sets[0][u] = b->t;
 
     // check if neighborhood is a clique
     for (node_id i = 0; i < g->D[u]; i++)
     {
         node_id v = g->V[u][i];
 
-        // check if vertex u is of highest weight 
-        if (g->W[u] < g->W[v])
+        // check if N(u) is a clique
+        if (!set_is_subset_except_one(g->V[u], g->D[u], g->V[v], g->D[v], v))
             return 0;
-
-        for (node_id j = 0; j < g->D[v]; j++)
-        {
-            node_id w = g->V[v][j];
-
-            // check if N(u) is a clique
-            if (b->fast_sets[0][w] != b->t)
-                return 0;
-        }
     }
 
     *offset = g->W[u];
