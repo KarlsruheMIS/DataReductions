@@ -6,6 +6,7 @@
 #include "domination.h"
 #include "neighborhood_removal.h"
 #include "simplicial_vertex.h"
+#include "simplicial_vertex_with_weight_transfer.h"
 #include "simultaneous_set.h"
 #include "triangle.h"
 #include "twin.h"
@@ -30,7 +31,7 @@ int main(int argc, char **argv)
 
     long long n = g->n, m = g->m;
 
-    reducer *r = reducer_init(g, 9,
+    reducer *r = reducer_init(g, 10,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
@@ -38,7 +39,7 @@ int main(int argc, char **argv)
                               v_shape,
                               domination,
                               twin,
-                              simplicial_vertex,
+                              simplicial_vertex_with_weight_transfer,
                               unconfined,
                               simultaneous_set);
 

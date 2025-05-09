@@ -29,10 +29,15 @@ int simplicial_vertex_reduce_graph(graph *g, node_id u, node_weight *offset,
     {
         node_id v = g->V[u][i];
 
+        // check if vertex u is of highest weight 
+        if (g->W[u] < g->W[v])
+            return 0;
+
         for (node_id j = 0; j < g->D[v]; j++)
         {
             node_id w = g->V[v][j];
 
+            // check if N(u) is a clique
             if (b->fast_sets[0][w] != b->t)
                 return 0;
         }
