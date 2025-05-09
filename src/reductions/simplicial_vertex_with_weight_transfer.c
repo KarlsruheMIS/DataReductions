@@ -53,7 +53,7 @@ int simplicial_vertex_with_weight_transfer_reduce_graph(graph *g, node_id u, nod
     d->u = max_weight_v_simplicial;
     d->data = NULL;
 
-    if (g->D[max_weight_v_simplicial] == g->D[u] && !higher_weight_vertex) // simplicial vertex reduction
+    if (!higher_weight_vertex) // simplicial vertex reduction
     {
         d->z = 0;
         graph_deactivate_neighborhood(g, max_weight_v_simplicial);
@@ -62,10 +62,11 @@ int simplicial_vertex_with_weight_transfer_reduce_graph(graph *g, node_id u, nod
     {
         d->z = 1;
         d->n = 0;
+        graph_deactivate_vertex(g, max_weight_v_simplicial);
         node_id *remaining_vertices = malloc(sizeof(node_id) * g->D[u]);
-        for (node_id i = 0; i < g->D[u]; i++)
+        for (node_id i = 0; i < g->D[max_weight_v_simplicial]; i++)
         {
-            node_id v = g->V[u][i];
+            node_id v = g->V[max_weight_v_simplicial][i];
 
             if (g->W[v] <= g->W[max_weight_v_simplicial])
                 graph_deactivate_vertex(g, v);
@@ -101,6 +102,7 @@ void simplicial_vertex_with_weight_transfer_restore_graph(graph *g, reconstructi
             else
                 g->W[v] += g->W[d->u];
         }
+        graph_activate_vertex(g, d->u);
     }
 }
 
