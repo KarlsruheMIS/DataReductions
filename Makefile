@@ -6,7 +6,7 @@ CFLAGS = -g -std=gnu17 -O3 -I include -I include/reductions
 OBJ_SHARED = graph.o reducer.o reduction.o \
 			 degree_zero.o degree_one.o domination.o neighborhood_removal.o twin.o \
 			 triangle.o v_shape.o simultaneous_set.o unconfined.o simplicial_vertex.o \
-			 simplicial_vertex_with_weight_transfer.o
+			 simplicial_vertex_with_weight_transfer.o critical_set.o
 
 OBJ_REDUCE = $(OBJ_SHARED) main.o
 OBJ_LIB = $(OBJ_SHARED) mwis_reductions.o
