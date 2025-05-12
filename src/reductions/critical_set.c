@@ -224,7 +224,7 @@ int critical_set_reduce_graph(graph *g, node_id u, node_weight *offset,
             break;
         flow = tide_cycle(n, E, ES, EL, ne, R, C, P, H, L);
     }
-    printf("%d\n", it_count);
+    // printf("%d\n", it_count);
 
     bfs(n, V, E, C, D, _R, _W, ES, EL, &ne);
 
