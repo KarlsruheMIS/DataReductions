@@ -18,8 +18,8 @@ node_weight tide_cycle(node_id n, node_id *E, node_id *ES, node_id *EL, node_id 
     {
         node_id e = EL[i];
         node_id u = ES[i], v = E[e];
-        P[e] = (C[e] < H[u]) ? C[e] : H[u];
-        H[v] += P[e];
+        P[i] = (C[e] < H[u]) ? C[e] : H[u];
+        H[v] += P[i];
     }
 
     if (H[n - 1] == 0)
@@ -35,11 +35,11 @@ node_weight tide_cycle(node_id n, node_id *E, node_id *ES, node_id *EL, node_id 
         node_id u = ES[i], v = E[e];
 
         node_weight c = H[u] - L[u];
-        P[e] = (c < P[e]) ? c : P[e];
-        P[e] = (L[v] < P[e]) ? L[v] : P[e];
+        P[i] = (c < P[i]) ? c : P[i];
+        P[i] = (L[v] < P[i]) ? L[v] : P[i];
 
-        L[v] -= P[e];
-        L[u] += P[e];
+        L[v] -= P[i];
+        L[u] += P[i];
     }
 
     for (node_id i = 0; i < n; i++)
@@ -51,11 +51,11 @@ node_weight tide_cycle(node_id n, node_id *E, node_id *ES, node_id *EL, node_id 
         node_id e = EL[i];
         node_id u = ES[i], v = E[e];
 
-        P[e] = (H[u] < P[e]) ? H[u] : P[e];
-        H[u] -= P[e];
-        H[v] += P[e];
-        C[e] -= P[e];
-        C[R[e]] += P[e];
+        P[i] = (H[u] < P[i]) ? H[u] : P[i];
+        H[u] -= P[i];
+        H[v] += P[i];
+        C[e] -= P[i];
+        C[R[e]] += P[i];
     }
 
     return H[n - 1];
@@ -73,7 +73,7 @@ void bfs(node_id n, node_id *V, node_id *E, node_weight *C, node_id *D,
 
     *m = 0;
 
-    while (r > 0)
+    while (r > 0 && D[n - 1] < 0)
     {
         w = 0;
         for (node_id i = 0; i < r; i++)
@@ -85,15 +85,17 @@ void bfs(node_id n, node_id *V, node_id *E, node_weight *C, node_id *D,
                     continue;
 
                 node_id v = E[j];
-                if (D[v] >= 0)
-                    continue;
-
-                W[w++] = v;
-                D[v] = D[u] + 1;
-
-                ES[*m] = u;
-                EL[*m] = j;
-                (*m)++;
+                if (D[v] < 0)
+                {
+                    W[w++] = v;
+                    D[v] = D[u] + 1;
+                }
+                if (D[v] == D[u] + 1)
+                {
+                    ES[*m] = u;
+                    EL[*m] = j;
+                    (*m)++;
+                }
             }
         }
         r = w;
@@ -209,6 +211,13 @@ int critical_set_reduce_graph(graph *g, node_id u, node_weight *offset,
     node_id it_count = 0;
     while (flow > 0)
     {
+        // for (node_id i = 0; i <= n; i++)
+        //     printf("%d ", V[i]);
+        // printf("\n");
+        // for (node_id i = 0; i < m; i++)
+        //     printf("%lld ", C[i]);
+        // printf("\n");
+
         it_count++;
         bfs(n, V, E, C, D, _R, _W, ES, EL, &ne);
         if (D[n - 1] < 0)
