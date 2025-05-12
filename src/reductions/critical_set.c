@@ -128,6 +128,13 @@ int critical_set_reduce_graph(graph *g, node_id u, node_weight *offset,
 
     node_id na = n;
 
+    if (na == 0)
+    {
+        free(FM);
+        free(RM);
+        return 0;
+    }
+
     n = n * 2 + 2;
 
     node_id *V = malloc(sizeof(node_id) * (n + 1));
