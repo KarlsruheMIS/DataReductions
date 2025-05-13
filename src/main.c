@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 
     long long n = g->n, m = g->m;
 
-    reducer *r = reducer_init(g, 9,
+    reducer *r = reducer_init(g, 10,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
@@ -41,7 +41,8 @@ int main(int argc, char **argv)
                               domination,
                               twin,
                               simplicial_vertex_with_weight_transfer,
-                              unconfined);
+                              unconfined,
+                              critical_set);
 
     double start = get_wtime();
     reduction_log *l = reducer_reduce(r, g);

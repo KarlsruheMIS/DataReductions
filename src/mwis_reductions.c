@@ -7,8 +7,11 @@
 #include "triangle.h"
 #include "v_shape.h"
 #include "neighborhood_removal.h"
+#include "simplicial_vertex_with_weight_transfer.h"
 #include "twin.h"
 #include "domination.h"
+#include "critical_set.h"
+#include "unconfined.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -26,14 +29,18 @@ void *mwis_reduction_reduce_graph(graph *g)
 {
     graph_sort_edges(g);
     long long orginal_size = g->n;
-    reducer *r = reducer_init(g, 7,
+    reducer *r = reducer_init(g, 10,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
                               triangle,
                               v_shape,
+                              domination,
                               twin,
-                              domination);
+                              simplicial_vertex_with_weight_transfer,
+                              unconfined,
+                              critical_set);
+
     reduction_log *l = reducer_reduce(r, g);
     reducer_free(r);
 
