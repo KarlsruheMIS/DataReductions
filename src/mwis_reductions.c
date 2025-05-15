@@ -121,6 +121,9 @@ int *mwis_reduction_lift_solution(int *rI, void *rd)
 void mwis_reduction_restore_graph(graph *rg, void *rd)
 {
     reduction_data *d = (reduction_data *)rd;
+    graph tmp = *rg;
+    *rg = *d->g;
+    *d->g = tmp;
 
     for (int i = d->rl->n - 1; i >= 0; i--)
     {
