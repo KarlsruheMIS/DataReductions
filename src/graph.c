@@ -34,7 +34,7 @@ void graph_append_endpoint(graph *g, node_id u, node_id v)
 graph *graph_init()
 {
     graph *g = malloc(sizeof(graph));
-    *g = (graph){.n = 0, .m = 0, ._a = ALLOC_N_INIT};
+    *g = (graph){.n = 0, .m = 0, .nr = 0, ._a = ALLOC_N_INIT};
 
     g->V = malloc(sizeof(node_id *) * g->_a);
     g->D = malloc(sizeof(node_id) * g->_a);
@@ -153,6 +153,7 @@ void graph_add_vertex(graph *g, node_weight w)
     g->A[u] = 1;
     g->W[u] = w;
     g->n++;
+    g->nr++;
 }
 
 void graph_remove_last_added_vertex(graph *g)
@@ -270,6 +271,7 @@ void graph_deactivate_vertex(graph *g, node_id u)
     }
     g->A[u] = 0;
     g->m -= g->D[u];
+    g->nr--;
 }
 
 void graph_activate_vertex(graph *g, node_id u)
@@ -283,6 +285,7 @@ void graph_activate_vertex(graph *g, node_id u)
     }
     g->A[u] = 1;
     g->m += g->D[u];
+    g->nr++;
 }
 
 void graph_deactivate_neighborhood(graph *g, node_id u)
@@ -311,6 +314,7 @@ void graph_deactivate_neighborhood(graph *g, node_id u)
         }
     }
     g->m -= rm / 2;
+    g->nr -= g->D[u] + 1;
 }
 
 void graph_activate_neighborhood(graph *g, node_id u)
@@ -332,6 +336,7 @@ void graph_activate_neighborhood(graph *g, node_id u)
         }
     }
     g->m += rm / 2;
+    g->nr += g->D[u] + 1;
 
     for (node_id i = 0; i < g->D[u]; i++)
     {

@@ -31,6 +31,7 @@ typedef struct
 
     node_id n;  // Number of vertices changed
     node_id *V; // The changed vertices
+    int *in_V;  // Set to 1 if vertex is in the list
 } change_list;
 
 typedef struct

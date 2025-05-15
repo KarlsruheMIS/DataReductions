@@ -2,6 +2,15 @@
 
 #include "defs.h"
 
+#include <time.h>
+
+static inline double get_wtime()
+{
+    struct timespec tp;
+    clock_gettime(CLOCK_REALTIME, &tp);
+    return (double)tp.tv_sec + ((double)tp.tv_nsec / 1e9);
+}
+
 static inline int compare_ids(const void *a, const void *b)
 {
     return (*(node_id *)a - *(node_id *)b);
@@ -63,7 +72,7 @@ static inline int set_is_subset(const node_id *A, node_id a, const node_id *B, n
     return i == a;
 }
 
-// Test if A is a subset of B, ignoring x
+// Test if A is a subset of B, ignoring x from A
 static inline int set_is_subset_except_one(const node_id *A, node_id a, const node_id *B, node_id b, node_id x)
 {
     if (b < a - 1)

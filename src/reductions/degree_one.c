@@ -49,7 +49,7 @@ void degree_one_restore_graph(graph *g, reconstruction_data *d)
 
 void degree_one_reconstruct_solution(int *I, reconstruction_data *d)
 {
-    if (d->z)
+    if (!d->z)
     {
         I[d->u] = 1;
     }

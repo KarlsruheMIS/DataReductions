@@ -25,26 +25,8 @@ typedef struct
     int *reverse_map;
 } reduction_data;
 
-void *mwis_reduction_reduce_graph(graph *g)
+reduction_data *build_reduced_graph(graph *g, reduction_log *l, long long orginal_size)
 {
-    graph_sort_edges(g);
-    long long orginal_size = g->n;
-    reducer *r = reducer_init(g, 3,
-                              degree_zero,
-                              degree_one,
-                              neighborhood_removal,
-                              triangle,
-                              v_shape,
-                              domination,
-                              twin,
-                              simplicial_vertex_with_weight_transfer,
-                              unconfined,
-                              critical_set);
-
-    reduction_log *l = reducer_reduce(r, g);
-    reducer_free(r);
-
-    // build reduced graph
     node_id n_reduced = 0;
     graph *rg = graph_init();
     node_id *forward_map = malloc(sizeof(node_id) * g->n);
@@ -90,7 +72,51 @@ void *mwis_reduction_reduce_graph(graph *g)
     *rg = *g;
     *g = tmp;
 
-    return (void *)rd;
+    return rd;
+}
+
+void *mwis_reduction_reduce_graph(graph *g)
+{
+    graph_sort_edges(g);
+    long long orginal_size = g->n;
+    reducer *r = reducer_init(g, 9,
+                              degree_zero,
+                              degree_one,
+                              neighborhood_removal,
+                              triangle,
+                              v_shape,
+                              domination,
+                              twin,
+                              simplicial_vertex_with_weight_transfer,
+                              unconfined,
+                              critical_set);
+
+    reduction_log *l = reducer_reduce(r, g);
+    reducer_free(r);
+
+    return (void *)build_reduced_graph(g, l, orginal_size);
+}
+
+void *mwis_reduction_run_struction(graph *g, double tl)
+{
+    graph_sort_edges(g);
+    long long orginal_size = g->n;
+    reducer *r = reducer_init(g, 9,
+                              degree_zero,
+                              degree_one,
+                              neighborhood_removal,
+                              triangle,
+                              v_shape,
+                              domination,
+                              twin,
+                              simplicial_vertex_with_weight_transfer,
+                              unconfined);
+
+    reduction_log *l = reducer_reduce(r, g);
+    reducer_struction(r, g, l, tl);
+    reducer_free(r);
+
+    return (void *)build_reduced_graph(g, l, orginal_size);
 }
 
 int *mwis_reduction_lift_solution(int *rI, void *rd)

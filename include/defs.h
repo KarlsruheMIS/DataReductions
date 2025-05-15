@@ -7,7 +7,7 @@
 #define MAX_SIMPLICIAL_VERTEX (1 << 9)
 #define MAX_TWIN (1 << 9)
 #define MAX_UNCONFINED (1 << 9)
-#define MAX_STRUCTION (1 << 9)
+#define MAX_STRUCTION (1 << 5)
 
 #define __NODE_TYPES__
 

@@ -13,7 +13,7 @@ void extended_struction_reconstruct_solution(int *I, reconstruction_data *d);
 
 void extended_struction_clean(reconstruction_data *d);
 
-static reduction critical_set = {
+static reduction extended_struction = {
     .reduce = extended_struction_reduce_graph,
     .restore = extended_struction_restore_graph,
     .reconstruct = extended_struction_reconstruct_solution,

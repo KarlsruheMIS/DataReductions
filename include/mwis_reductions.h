@@ -17,10 +17,10 @@
 
 typedef struct
 {
-    long long n, m;  // Number of vertices and edges
-    node_id **V, *D; // Adjacency lists and degrees
-    node_weight *W;  // Vertex weights
-    int *A;          // Active flags
+    long long n, m, nr; // Number of vertices, edges, and remaining vertices
+    node_id **V, *D;    // Adjacency lists and degrees
+    node_weight *W;     // Vertex weights
+    int *A;             // Active flags
 
     long long _a;  // Number of vertices allocated memory for
     long long *_A; // Allocated memory per neighborhood
@@ -41,6 +41,8 @@ void graph_free(graph *g);
 */
 
 void *mwis_reduction_reduce_graph(graph *g);
+
+void *mwis_reduction_run_struction(graph *g, double tl);
 
 int *mwis_reduction_lift_solution(int *rI, void *reduction_data);
 

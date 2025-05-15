@@ -196,12 +196,14 @@ void v_shape_reconstruct_solution(int *I, reconstruction_data *d)
 {
     if (d->z == 1)
     {
-        if (I[d->x] == 0 && I[d->y] == 0)
+        if (!I[d->x] && !I[d->y])
             I[d->u] = 1;
+        else if (I[d->u])
+            I[d->u] = 0;
     }
     else if (d->z == 2)
     {
-        if (I[d->x] == 0 && I[d->y] == 0)
+        if (!I[d->x]&& !I[d->y])
             I[d->u] = 1;
     }
     else if (d->z == 3)
@@ -212,6 +214,7 @@ void v_shape_reconstruct_solution(int *I, reconstruction_data *d)
     {
         if (I[d->v])
         {
+            I[d->v] = 0;
             I[d->x] = 1;
             I[d->y] = 1;
         }

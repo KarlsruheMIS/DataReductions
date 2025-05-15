@@ -1,5 +1,6 @@
 #include "graph.h"
 #include "reducer.h"
+#include "algorithms.h"
 
 #include "degree_zero.h"
 #include "degree_one.h"
@@ -14,15 +15,10 @@
 #include "v_shape.h"
 #include "critical_set.h"
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-
-double get_wtime()
-{
-    struct timespec tp;
-    clock_gettime(CLOCK_REALTIME, &tp);
-    return (double)tp.tv_sec + ((double)tp.tv_nsec / 1e9);
-}
+#include <assert.h>
 
 int main(int argc, char **argv)
 {
@@ -30,9 +26,13 @@ int main(int argc, char **argv)
     graph *g = graph_parse(f);
     fclose(f);
 
+    f = fopen(argv[1], "r");
+    graph *copy = graph_parse(f);
+    fclose(f);
+
     long long n = g->n, m = g->m;
 
-    reducer *r = reducer_init(g, 10,
+    reducer *r = reducer_init(g, 9,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
@@ -46,14 +46,8 @@ int main(int argc, char **argv)
 
     double start = get_wtime();
     reduction_log *l = reducer_reduce(r, g);
+    reducer_struction(r, g, l, 30);
     double elapsed = get_wtime() - start;
-
-    long long n_reduced = 0;
-    for (node_id i = 0; i < g->n; i++)
-    {
-        if (g->A[i])
-            n_reduced++;
-    }
 
     int offset = 0, p = 0;
     while (argv[1][p] != '\0')
@@ -63,15 +57,72 @@ int main(int argc, char **argv)
         p++;
     }
 
-    printf("%45s %10lld %10lld -> %10lld %10lld (%10lld) %8.4lf\n",
-           argv[1] + offset, n, m, n_reduced, g->m, l->offset, elapsed);
+    printf("\r%45s %10lld %10lld %10lld %10lld %10lld %8.4lf\n",
+           argv[1] + offset, n, m, g->nr, g->m, l->offset, elapsed);
 
+    int *I = malloc(sizeof(int) * g->n);
+    for (node_id i = 0; i < g->n; i++)
+        I[i] = 0;
+
+    reducer_lift_solution(l, I);
     reducer_restore_graph(g, l, 0);
+
+    assert(g->n == n);
+    for (node_id u = 0; u < g->n; u++)
+    {
+        assert(g->W[u] == copy->W[u]);
+        assert(g->D[u] == copy->D[u]);
+    }
+
+    long long w = 0;
+    for (node_id i = 0; i < copy->n; i++)
+    {
+        if (!I[i])
+            continue;
+
+        w += copy->W[i];
+        for (node_id j = 0; j < copy->D[i]; j++)
+        {
+            if (I[copy->V[i][j]])
+                printf("Error\n");
+        }
+    }
+
+    printf("%lld\n", w);
+
+    // f = fopen("kernel.csv", "w");
+    // fprintf(f, "source,target\n");
+    // for (node_id u = 0; u < g->n; u++)
+    // {
+    //     if (!g->A[u])
+    //         continue;
+
+    //     for (node_id i = 0; i < g->D[u]; i++)
+    //     {
+    //         node_id v = g->V[u][i];
+    //         fprintf(f, "%d,%d\n", u, v);
+    //     }
+    // }
+    // fclose(f);
+
+    // f = fopen("kernel_meta.csv", "w");
+    // fprintf(f, "id,weight\n");
+    // for (node_id u = 0; u < g->n; u++)
+    // {
+    //     if (!g->A[u])
+    //         continue;
+
+    //     fprintf(f, "%d,%lld\n", u, g->W[u]);
+    // }
+    // fclose(f);
+
+    free(I);
 
     reducer_free_reduction_log(l);
     reducer_free(r);
 
     graph_free(g);
+    graph_free(copy);
 
     return 0;
 }
