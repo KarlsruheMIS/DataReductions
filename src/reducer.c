@@ -262,8 +262,8 @@ void reducer_struction(reducer *r, graph *g, reduction_log *l, int limit_m, doub
         else
         {
             t2 = get_wtime();
-            printf("\r%10lld %10lld", g->nr, g->m);
-            fflush(stdout);
+            // printf("\r%10lld %10lld", g->nr, g->m);
+            // fflush(stdout);
         }
         t1 = get_wtime();
     }

@@ -12,6 +12,9 @@ int unconfined_reduce_graph(graph *g, node_id u, node_weight *offset,
 
     assert(N_BUFFERS >= 3);
 
+    if (g->D[u] >= MAX_UNCONFINED)
+        return 0;
+
     node_id *S = b->buffers[0], *NS = b->buffers[1];
     int *S_B = b->fast_sets[0], *NS_B = b->fast_sets[1], *NIS_B = b->fast_sets[2];
 
@@ -32,7 +35,7 @@ int unconfined_reduce_graph(graph *g, node_id u, node_weight *offset,
     {
         node_id v = NS[--m];
         NS_B[v] = t - 1;
-        if (S_B[v] == t)
+        if (S_B[v] == t || g->D[v] >= MAX_UNCONFINED)
             continue;
 
         long long sw = 0, dw = 0;

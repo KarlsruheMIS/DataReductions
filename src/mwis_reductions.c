@@ -108,7 +108,7 @@ void *mwis_reduction_run_struction(graph *g, double tl)
     double t0 = get_wtime();
     graph_sort_edges(g);
     long long orginal_size = g->n;
-    reducer *r = reducer_init(g, 11,
+    reducer *r = reducer_init(g, 10,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
@@ -118,7 +118,7 @@ void *mwis_reduction_run_struction(graph *g, double tl)
                               twin,
                               simplicial_vertex_with_weight_transfer,
                               weighted_funnel,
-                              unconfined,
+                              //   unconfined,
                               extended_domination);
 
     reduction_log *l = reducer_reduce(r, g, tl);

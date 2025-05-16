@@ -8,6 +8,9 @@
 // {
 //     assert(g->A[u]);
 
+//     if (g->D[u] >= MAX_DOMINATION)
+//         return 0;
+
 //     for (node_id i = 0; i < g->D[u]; i++)
 //     {
 //         int v = g->V[u][i];

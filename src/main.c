@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 
     long long n = g->n, m = g->m;
 
-    reducer *r = reducer_init(g, 11,
+    reducer *r = reducer_init(g, 10,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
@@ -46,12 +46,12 @@ int main(int argc, char **argv)
                               twin,
                               simplicial_vertex_with_weight_transfer,
                               weighted_funnel,
-                              unconfined,
+                              //   unconfined,
                               extended_domination,
                               critical_set);
 
     double start = get_wtime();
-    reduction_log *l = reducer_reduce(r, g, 120);
+    reduction_log *l = reducer_reduce(r, g, 3000);
     printf("%10lld %10lld\n", g->nr, g->m);
     reducer_struction(r, g, l, 1, 120);
     reducer_struction(r, g, l, 0, 120);
