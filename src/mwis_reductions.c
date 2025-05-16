@@ -120,8 +120,8 @@ void *mwis_reduction_run_struction(graph *g, double tl)
                               unconfined);
 
     reduction_log *l = reducer_reduce(r, g);
-    reducer_struction(r, g, l, 1, tl / 2.0);
-    reducer_struction(r, g, l, 0, tl / 2.0);
+    reducer_struction(r, g, l, 1, (tl / 4.0) * 3.0);
+    reducer_struction(r, g, l, 0, (tl / 4.0) * 1.0);
     reducer_free(r);
 
     return (void *)build_reduced_graph(g, l, orginal_size);
