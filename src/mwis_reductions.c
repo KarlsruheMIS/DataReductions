@@ -1,6 +1,7 @@
 #include "graph.h"
 #include "reducer.h"
 #include "mwis_reductions.h"
+#include "algorithms.h"
 
 #include "degree_zero.h"
 #include "degree_one.h"
@@ -104,6 +105,7 @@ void *mwis_reduction_reduce_graph(graph *g)
 
 void *mwis_reduction_run_struction(graph *g, double tl)
 {
+    double t0 = get_wtime();
     graph_sort_edges(g);
     long long orginal_size = g->n;
     reducer *r = reducer_init(g, 11,
@@ -120,8 +122,12 @@ void *mwis_reduction_run_struction(graph *g, double tl)
                               unconfined);
 
     reduction_log *l = reducer_reduce(r, g);
-    reducer_struction(r, g, l, 1, (tl / 4.0) * 3.0);
-    reducer_struction(r, g, l, 0, (tl / 4.0) * 1.0);
+    double t1 = get_wtime();
+    double elapsed = t1 - t0;
+    reducer_struction(r, g, l, 1, (tl - elapsed) / 2.0);
+    t1 = get_wtime();
+    elapsed = t1 - t0;
+    reducer_struction(r, g, l, 0, tl - elapsed);
     reducer_free(r);
 
     return (void *)build_reduced_graph(g, l, orginal_size);
