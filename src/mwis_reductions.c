@@ -14,6 +14,7 @@
 #include "unconfined.h"
 #include "extended_domination.h"
 #include "weighted_funnel.h"
+#include "critical_set.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -81,7 +82,7 @@ void *mwis_reduction_reduce_graph(graph *g)
 {
     graph_sort_edges(g);
     long long orginal_size = g->n;
-    reducer *r = reducer_init(g, 9,
+    reducer *r = reducer_init(g, 12,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
@@ -90,6 +91,8 @@ void *mwis_reduction_reduce_graph(graph *g)
                               domination,
                               twin,
                               simplicial_vertex_with_weight_transfer,
+                              extended_domination,
+                              weighted_funnel,
                               unconfined,
                               critical_set);
 
