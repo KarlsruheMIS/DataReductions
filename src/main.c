@@ -5,6 +5,7 @@
 #include "degree_zero.h"
 #include "degree_one.h"
 #include "domination.h"
+#include "extended_domination.h"
 #include "neighborhood_removal.h"
 #include "simplicial_vertex.h"
 #include "simplicial_vertex_with_weight_transfer.h"
@@ -32,7 +33,7 @@ int main(int argc, char **argv)
 
     long long n = g->n, m = g->m;
 
-    reducer *r = reducer_init(g, 9,
+    reducer *r = reducer_init(g, 10,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
@@ -41,6 +42,7 @@ int main(int argc, char **argv)
                               domination,
                               twin,
                               simplicial_vertex_with_weight_transfer,
+                              extended_domination,
                               unconfined,
                               critical_set);
 
@@ -88,7 +90,7 @@ int main(int argc, char **argv)
         }
     }
 
-    printf("%lld\n", w);
+    // printf("%lld\n", w);
 
     // f = fopen("kernel.csv", "w");
     // fprintf(f, "source,target\n");
