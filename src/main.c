@@ -32,6 +32,8 @@ int main(int argc, char **argv)
     graph *copy = graph_parse(f);
     fclose(f);
 
+    printf("%10lld %10lld\n", g->nr, g->m);
+
     long long n = g->n, m = g->m;
 
     reducer *r = reducer_init(g, 11,
@@ -43,13 +45,14 @@ int main(int argc, char **argv)
                               domination,
                               twin,
                               simplicial_vertex_with_weight_transfer,
-                              extended_domination,
                               weighted_funnel,
                               unconfined,
+                              extended_domination,
                               critical_set);
 
     double start = get_wtime();
-    reduction_log *l = reducer_reduce(r, g);
+    reduction_log *l = reducer_reduce(r, g, 120);
+    printf("%10lld %10lld\n", g->nr, g->m);
     reducer_struction(r, g, l, 1, 120);
     reducer_struction(r, g, l, 0, 120);
     double elapsed = get_wtime() - start;

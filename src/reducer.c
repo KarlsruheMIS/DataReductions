@@ -169,17 +169,18 @@ int reducer_apply_reduction(graph *g, node_id u, reduction rule, reducer *r, red
     return 1;
 }
 
-reduction_log *reducer_reduce(reducer *r, graph *g)
+reduction_log *reducer_reduce(reducer *r, graph *g, double tl)
 {
     reduction_log *l = reducer_init_reduction_log(g);
-    reducer_reduce_continue(r, g, l);
+    reducer_reduce_continue(r, g, l, tl);
     return l;
 }
 
-void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l)
+void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l, double tl)
 {
     int rule = 0;
-    while (rule < r->n_rules)
+    double t0 = get_wtime();
+    while (rule < r->n_rules && get_wtime() - t0 < tl)
     {
         if (r->Queue_count[rule] == 0)
         {
@@ -208,7 +209,11 @@ void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l)
         int res = reducer_apply_reduction(g, u, r->Rule[rule], r, l);
 
         if (res)
+        {
+            // printf("\r%10lld %10lld %10d", g->nr, g->m, rule);
+            // fflush(stdout);
             rule = 0;
+        }
     }
 }
 
@@ -219,9 +224,15 @@ void reducer_struction(reducer *r, graph *g, reduction_log *l, int limit_m, doub
     double t0 = get_wtime(), t1 = get_wtime(), t2 = get_wtime();
     while (g->nr > 0 && t1 - t0 < tl && t1 - t2 < 1.0)
     {
-        node_id u = rand() % g->n;
-        while (!g->A[u])
+        node_id u = rand() % g->n, _t = 0;
+        while (!g->A[u] && _t++ < 1000)
             u = rand() % g->n;
+
+        if (!g->A[u])
+        {
+            t1 = get_wtime();
+            continue;
+        }
 
         long long n = g->nr, m = g->m, t = l->n;
 
@@ -244,15 +255,15 @@ void reducer_struction(reducer *r, graph *g, reduction_log *l, int limit_m, doub
         //         continue;
         // }
 
-        reducer_reduce_continue(r, g, l);
+        reducer_reduce_continue(r, g, l, tl - (t1 - t0));
 
         if (g->nr > n || (limit_m && g->m > m)) // || g->m > m
             reducer_restore_graph(g, l, t);
         else
         {
             t2 = get_wtime();
-            // printf("\r%10lld %10lld", g->nr, g->m);
-            // fflush(stdout);
+            printf("\r%10lld %10lld", g->nr, g->m);
+            fflush(stdout);
         }
         t1 = get_wtime();
     }

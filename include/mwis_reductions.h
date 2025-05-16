@@ -40,7 +40,7 @@ void graph_free(graph *g);
     Main functions for reduction process
 */
 
-void *mwis_reduction_reduce_graph(graph *g);
+void *mwis_reduction_reduce_graph(graph *g, double tl);
 
 void *mwis_reduction_run_struction(graph *g, double tl);
 

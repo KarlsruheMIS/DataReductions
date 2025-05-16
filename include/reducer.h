@@ -36,9 +36,9 @@ void reducer_free(reducer *r);
 
 void reducer_free_reduction_log(reduction_log *l);
 
-reduction_log *reducer_reduce(reducer *r, graph *g);
+reduction_log *reducer_reduce(reducer *r, graph *g, double tl);
 
-void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l);
+void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l, double tl);
 
 void reducer_struction(reducer *r, graph *g, reduction_log *l, int limit_m, double tl);
 

@@ -79,7 +79,7 @@ reduction_data *build_reduced_graph(graph *g, reduction_log *l, long long orgina
     return rd;
 }
 
-void *mwis_reduction_reduce_graph(graph *g)
+void *mwis_reduction_reduce_graph(graph *g, double tl)
 {
     graph_sort_edges(g);
     long long orginal_size = g->n;
@@ -97,7 +97,7 @@ void *mwis_reduction_reduce_graph(graph *g)
                               unconfined,
                               critical_set);
 
-    reduction_log *l = reducer_reduce(r, g);
+    reduction_log *l = reducer_reduce(r, g, tl);
     reducer_free(r);
 
     return (void *)build_reduced_graph(g, l, orginal_size);
@@ -117,11 +117,11 @@ void *mwis_reduction_run_struction(graph *g, double tl)
                               domination,
                               twin,
                               simplicial_vertex_with_weight_transfer,
-                              extended_domination,
                               weighted_funnel,
-                              unconfined);
+                              unconfined,
+                              extended_domination);
 
-    reduction_log *l = reducer_reduce(r, g);
+    reduction_log *l = reducer_reduce(r, g, tl);
     double t1 = get_wtime();
     double elapsed = t1 - t0;
     reducer_struction(r, g, l, 1, (tl - elapsed) / 2.0);

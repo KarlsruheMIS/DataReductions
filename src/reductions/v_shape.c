@@ -142,7 +142,7 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
 
             graph_deactivate_neighborhood(g, u);
 
-            reduction_data_queue_distance_two(g, d->v, c);
+            reduction_data_queue_distance_one(g, d->v, c);
         }
     }
 
