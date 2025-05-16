@@ -14,6 +14,7 @@
 #include "twin.h"
 #include "unconfined.h"
 #include "v_shape.h"
+#include "weighted_funnel.h"
 #include "critical_set.h"
 
 #include <stdlib.h>
@@ -33,7 +34,7 @@ int main(int argc, char **argv)
 
     long long n = g->n, m = g->m;
 
-    reducer *r = reducer_init(g, 10,
+    reducer *r = reducer_init(g, 11,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
@@ -43,12 +44,14 @@ int main(int argc, char **argv)
                               twin,
                               simplicial_vertex_with_weight_transfer,
                               extended_domination,
+                              weighted_funnel,
                               unconfined,
                               critical_set);
 
     double start = get_wtime();
     reduction_log *l = reducer_reduce(r, g);
-    reducer_struction(r, g, l, 30);
+    reducer_struction(r, g, l, 1, 120);
+    reducer_struction(r, g, l, 0, 120);
     double elapsed = get_wtime() - start;
 
     int offset = 0, p = 0;

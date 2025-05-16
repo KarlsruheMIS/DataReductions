@@ -167,6 +167,10 @@ int extended_struction_reduce_graph(graph *g, node_id u, node_weight *offset,
         }
 
         d->u = u;
+        es->E = realloc(es->E, sizeof(node_id) * es->m);
+        es->V = realloc(es->V, sizeof(node_id) * (es->n + 1));
+        es->ID = realloc(es->ID, sizeof(node_id) * es->n);
+        es->W = realloc(es->W, sizeof(node_weight) * es->n);
         d->data = (void *)es;
 
         return 1;

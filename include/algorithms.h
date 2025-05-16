@@ -105,3 +105,37 @@ static inline int set_is_subset_except_one(const node_id *A, node_id a, const no
 
     return i == a;
 }
+
+// Test if A is a subset of B, ignoring x and y from A
+static inline int set_is_subset_except_two(const node_id *A, node_id a, const node_id *B, node_id b, node_id x, node_id y)
+{
+    if (b < a - 2)
+        return 0;
+
+    node_id i = 0, j = 0;
+    while (i < a && j < b)
+    {
+        if (A[i] == B[j])
+        {
+            i++;
+            j++;
+        }
+        else if (A[i] > B[j])
+        {
+            j++;
+        }
+        else if (A[i] == x || A[i] == y)
+        {
+            i++;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    while (i < a && (A[i] == x || A[i] == y))
+        i++;
+
+    return i == a;
+}

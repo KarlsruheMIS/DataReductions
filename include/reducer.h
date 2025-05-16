@@ -40,7 +40,7 @@ reduction_log *reducer_reduce(reducer *r, graph *g);
 
 void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l);
 
-void reducer_struction(reducer *r, graph *g, reduction_log *l, double tl);
+void reducer_struction(reducer *r, graph *g, reduction_log *l, int limit_m, double tl);
 
 void reducer_include_vertex(reducer *r, graph *g, reduction_log *l, node_id u);
 

@@ -122,12 +122,15 @@ void reducer_free_reduction_log(reduction_log *l)
     free(l);
 }
 
-void reducer_queue_changed(reducer *r)
+void reducer_queue_changed(graph *g, reducer *r)
 {
     for (node_id i = 0; i < r->c->n; i++)
     {
         node_id v = r->c->V[i];
         r->c->in_V[v] = 0;
+        if (!g->A[v])
+            continue;
+
         for (int j = 0; j < r->n_rules; j++)
         {
             if (!r->In_queues[j][v])
@@ -138,6 +141,32 @@ void reducer_queue_changed(reducer *r)
         }
     }
     r->c->n = 0;
+}
+
+int reducer_apply_reduction(graph *g, node_id u, reduction rule, reducer *r, reduction_log *l)
+{
+    l->Offset[l->n] = 0;
+    int res = rule.reduce(g, u, l->Offset + l->n, r->b, r->c, l->Log_data + l->n);
+    r->b->t++;
+
+    if (r->b->t == (1 << 30))
+        reduction_data_reset_fast_sets(r->b);
+
+    if (!res)
+        return 0;
+
+    while (g->_a > r->_a)
+        reducer_increase(r);
+    if (l->n == l->_a)
+        reducer_increase_reduction_log(l);
+
+    reducer_queue_changed(g, r);
+
+    l->Log_rule[l->n] = rule;
+    l->offset += l->Offset[l->n];
+    l->n++;
+
+    return 1;
 }
 
 reduction_log *reducer_reduce(reducer *r, graph *g)
@@ -176,134 +205,57 @@ void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l)
                 continue;
         }
 
-        l->Offset[l->n] = 0;
-        int res = r->Rule[rule].reduce(g, u, &l->Offset[l->n], r->b, r->c, &l->Log_data[l->n]);
-        r->b->t++;
-
-        if (r->b->t == (1 << 30))
-            reduction_data_reset_fast_sets(r->b);
+        int res = reducer_apply_reduction(g, u, r->Rule[rule], r, l);
 
         if (res)
-        {
-            while (g->_a > r->_a)
-                reducer_increase(r);
-            if (l->n == l->_a)
-                reducer_increase_reduction_log(l);
-
-            reducer_queue_changed(r);
-
-            l->Log_rule[l->n] = r->Rule[rule];
-            l->offset += l->Offset[l->n];
-            l->n++;
             rule = 0;
-        }
     }
 }
 
-void reducer_struction(reducer *r, graph *g, reduction_log *l, double tl)
+void reducer_struction(reducer *r, graph *g, reduction_log *l, int limit_m, double tl)
 {
-    double t0 = get_wtime();
-    while (g->nr > 0 && get_wtime() - t0 < tl)
+    // srand(time(NULL));
+
+    double t0 = get_wtime(), t1 = get_wtime(), t2 = get_wtime();
+    while (g->nr > 0 && t1 - t0 < tl && t1 - t2 < 1.0)
     {
         node_id u = rand() % g->n;
         while (!g->A[u])
             u = rand() % g->n;
 
-        long long n = g->nr, t = l->n;
+        long long n = g->nr, m = g->m, t = l->n;
 
-        l->Offset[l->n] = 0;
-        int res = extended_struction.reduce(g, u, &l->Offset[l->n], r->b, r->c, &l->Log_data[l->n]);
-        r->b->t++;
-
-        if (r->b->t == (1 << 30))
-            reduction_data_reset_fast_sets(r->b);
+        int res = reducer_apply_reduction(g, u, extended_struction, r, l);
 
         if (!res)
             continue;
 
-        while (g->_a > r->_a)
-            reducer_increase(r);
-        if (l->n == l->_a)
-            reducer_increase_reduction_log(l);
+        // int it = rand() % 4;
+        // for (int _t = 0; _t < it && r->Queue_count[0] > 0; _t++)
+        // {
+        //     node_id p = rand() % r->Queue_count[0];
+        //     node_id v = r->Queues[0][p];
+        //     if (!g->A[v])
+        //         continue;
 
-        reducer_queue_changed(r);
+        //     res = reducer_apply_reduction(g, v, extended_struction, r, l);
 
-        l->Log_rule[l->n] = extended_struction;
-        l->offset += l->Offset[l->n];
-        l->n++;
-
-        int it = rand() % 4;
-        for (int _t = 0; _t < it && r->Queue_count[0] > 0; _t++)
-        {
-            node_id p = rand() % r->Queue_count[0];
-            node_id v = r->Queues[0][p];
-            if (!g->A[v])
-                continue;
-
-            l->Offset[l->n] = 0;
-            res = extended_struction.reduce(g, v, &l->Offset[l->n], r->b, r->c, &l->Log_data[l->n]);
-            r->b->t++;
-
-            if (r->b->t == (1 << 30))
-                reduction_data_reset_fast_sets(r->b);
-
-            if (!res)
-                continue;
-
-            while (g->_a > r->_a)
-                reducer_increase(r);
-            if (l->n == l->_a)
-                reducer_increase_reduction_log(l);
-
-            reducer_queue_changed(r);
-
-            l->Log_rule[l->n] = extended_struction;
-            l->offset += l->Offset[l->n];
-            l->n++;
-        }
+        //     if (!res)
+        //         continue;
+        // }
 
         reducer_reduce_continue(r, g, l);
 
-        if (g->nr > n)
+        if (g->nr > n || (limit_m && g->m > m)) // || g->m > m
             reducer_restore_graph(g, l, t);
         else
         {
+            t2 = get_wtime();
             printf("\r%10lld %10lld", g->nr, g->m);
             fflush(stdout);
         }
+        t1 = get_wtime();
     }
-
-    // for (node_id u = 0; u < g->n; u++)
-    // {
-    //     if (!g->A[u])
-    //         continue;
-
-    //     long long n = g->n, t = l->n;
-
-    //     l->Offset[l->n] = 0;
-    //     int res = extended_struction.reduce(g, u, &l->Offset[l->n], r->b, r->c, &l->Log_data[l->n]);
-
-    //     if (res)
-    //     {
-    //         while (g->_a > r->_a)
-    //             reducer_increase(r);
-    //         if (l->n == l->_a)
-    //             reducer_increase_reduction_log(l);
-
-    //         reducer_queue_changed(r);
-
-    //         l->Log_rule[l->n] = extended_struction;
-    //         l->offset += l->Offset[l->n];
-    //         l->n++;
-
-    //         reducer_reduce_continue(r, g, l);
-
-    //         if (g->n > n)
-    //             reducer_restore_graph(g, l, t);
-    //         // else
-    //         //     printf("Reduced with struction\n");
-    //     }
-    // }
 }
 
 void reducer_include_vertex(reducer *r, graph *g, reduction_log *l, node_id u)

@@ -7,7 +7,7 @@ OBJ_SHARED = graph.o reducer.o reduction.o \
 			 degree_zero.o degree_one.o domination.o neighborhood_removal.o twin.o \
 			 triangle.o v_shape.o simultaneous_set.o unconfined.o simplicial_vertex.o \
 			 simplicial_vertex_with_weight_transfer.o critical_set.o extended_struction.o \
-			 extended_domination.o
+			 extended_domination.o weighted_funnel.o
 
 OBJ_REDUCE = $(OBJ_SHARED) main.o
 OBJ_LIB = $(OBJ_SHARED) mwis_reductions.o
