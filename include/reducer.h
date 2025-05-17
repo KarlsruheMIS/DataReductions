@@ -18,6 +18,8 @@ typedef struct
 
     buffers *b;
     change_list *c;
+
+    int verbose;
 } reducer;
 
 typedef struct

@@ -44,6 +44,8 @@ reducer *reducer_init(graph *g, int n_rules, ...)
 
     va_end(args);
 
+    r->verbose = 0;
+
     return r;
 }
 
@@ -210,10 +212,17 @@ void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l, double tl)
 
         if (res)
         {
-            // printf("\r%10lld %10lld %10d", g->nr, g->m, rule);
-            // fflush(stdout);
+            if (r->verbose)
+            {
+                printf("\r%10lld %10lld %10d", g->nr, g->m, rule);
+                fflush(stdout);
+            }
             rule = 0;
         }
+    }
+    if (r->verbose)
+    {
+        printf("\r%10lld %10lld %10d\n", g->nr, g->m, rule);
     }
 }
 
@@ -221,12 +230,17 @@ void reducer_struction(reducer *r, graph *g, reduction_log *l, int limit_m, doub
 {
     // srand(time(NULL));
 
+    int verbose = r->verbose;
+    r->verbose = 0;
+
     double t0 = get_wtime(), t1 = get_wtime(), t2 = get_wtime();
     while (g->nr > 0 && t1 - t0 < tl && t1 - t2 < 1.0)
     {
         node_id u = rand() % g->n, _t = 0;
         while (!g->A[u] && _t++ < 1000)
+        {
             u = rand() % g->n;
+        }
 
         if (!g->A[u])
         {
@@ -239,7 +253,10 @@ void reducer_struction(reducer *r, graph *g, reduction_log *l, int limit_m, doub
         int res = reducer_apply_reduction(g, u, extended_struction, r, l);
 
         if (!res)
+        {
+            t1 = get_wtime();
             continue;
+        }
 
         // int it = rand() % 4;
         // for (int _t = 0; _t < it && r->Queue_count[0] > 0; _t++)
@@ -262,11 +279,17 @@ void reducer_struction(reducer *r, graph *g, reduction_log *l, int limit_m, doub
         else
         {
             t2 = get_wtime();
-            // printf("\r%10lld %10lld", g->nr, g->m);
-            // fflush(stdout);
+            if (verbose)
+            {
+                printf("\r%10lld %10lld %10.2lf", g->nr, g->m, t1 - t0);
+                fflush(stdout);
+            }
         }
         t1 = get_wtime();
     }
+    if (verbose)
+        printf("\r%10lld %10lld\n", g->nr, g->m);
+    r->verbose = verbose;
 }
 
 void reducer_include_vertex(reducer *r, graph *g, reduction_log *l, node_id u)
