@@ -83,19 +83,18 @@ void *mwis_reduction_reduce_graph(graph *g, double tl)
 {
     graph_sort_edges(g);
     long long orginal_size = g->n;
-    reducer *r = reducer_init(g, 12,
+    reducer *r = reducer_init(g, 11,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
                               triangle,
                               v_shape,
-                              domination,
                               twin,
-                              simplicial_vertex_with_weight_transfer,
+                              domination,
                               extended_domination,
+                              simplicial_vertex_with_weight_transfer,
                               weighted_funnel,
-                              unconfined,
-                              critical_set);
+                              unconfined);
 
     reduction_log *l = reducer_reduce(r, g, tl);
     reducer_free(r);
@@ -108,26 +107,25 @@ void *mwis_reduction_run_struction(graph *g, double tl)
     double t0 = get_wtime();
     graph_sort_edges(g);
     long long orginal_size = g->n;
-    reducer *r = reducer_init(g, 10,
+    reducer *r = reducer_init(g, 11,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
                               triangle,
                               v_shape,
-                              domination,
                               twin,
+                              domination,
+                              extended_domination,
                               simplicial_vertex_with_weight_transfer,
                               weighted_funnel,
-                              //   unconfined,
-                              extended_domination);
+                              unconfined);
 
     reduction_log *l = reducer_reduce(r, g, tl);
     double t1 = get_wtime();
     double elapsed = t1 - t0;
-    reducer_struction(r, g, l, 1, (tl - elapsed) / 2.0);
-    t1 = get_wtime();
-    elapsed = t1 - t0;
+    r->n_rules = 8;
     reducer_struction(r, g, l, 0, tl - elapsed);
+    r->n_rules = 11;
     reducer_free(r);
 
     return (void *)build_reduced_graph(g, l, orginal_size);
