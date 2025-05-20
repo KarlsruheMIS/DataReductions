@@ -3,3 +3,4 @@ bin/*
 !bin/.gitignore
 *.a
 mwis_reduce
+mwis_visualize

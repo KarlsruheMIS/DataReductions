@@ -36,26 +36,34 @@ int main(int argc, char **argv)
 
     long long n = g->n, m = g->m;
 
-    reducer *r = reducer_init(g, 10,
+    reducer *r = reducer_init(g, 12,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
                               triangle,
                               v_shape,
+                              simultaneous_set,
                               domination,
                               twin,
                               simplicial_vertex_with_weight_transfer,
                               weighted_funnel,
-                              //   unconfined,
+                              unconfined,
                               extended_domination,
                               critical_set);
 
     double start = get_wtime();
     reduction_log *l = reducer_reduce(r, g, 3000);
     printf("%10lld %10lld\n", g->nr, g->m);
+    r->verbose = 1;
     reducer_struction(r, g, l, 1, 120);
     reducer_struction(r, g, l, 0, 120);
     double elapsed = get_wtime() - start;
+
+    for (int i = 0; i < g->n; i++)
+    {
+        if (g->A[i] && g->W[i] > 1)
+            printf("%d %lld\n", i, g->W[i]);
+    }
 
     int offset = 0, p = 0;
     while (argv[1][p] != '\0')

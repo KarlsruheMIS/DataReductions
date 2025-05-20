@@ -10,9 +10,11 @@ OBJ_SHARED = graph.o reducer.o reduction.o \
 			 extended_domination.o weighted_funnel.o
 
 OBJ_REDUCE = $(OBJ_SHARED) main.o
+OBJ_VIS = $(OBJ_SHARED) visualizer.o main_visualizer.o
 OBJ_LIB = $(OBJ_SHARED) mwis_reductions.o
 
 OBJ_REDUCE := $(addprefix bin/, $(OBJ_REDUCE))
+OBJ_VIS := $(addprefix bin/, $(OBJ_VIS))
 OBJ_LIB := $(addprefix bin/, $(OBJ_LIB))
 DEP = $(OBJ_REDUCE) $(OBJ_LIB)
 DEP := $(sort $(DEP))
@@ -20,12 +22,15 @@ DEP := $(sort $(DEP))
 vpath %.c src src/reductions
 vpath %.h include include/reductions
 
-all : mwis_reduce libmwis_reductions.a
+all : mwis_reduce mwis_visualize libmwis_reductions.a
 
 -include $(DEP:.o=.d)
 
 mwis_reduce : $(OBJ_REDUCE)
 	$(CC) $(CFLAGS) -o $@ $^
+
+mwis_visualize : $(OBJ_VIS)
+	$(CC) $(CFLAGS) -fopenmp -o $@ $^ -lm -lglut -lGLU -lGL
 
 libmwis_reductions.a : $(OBJ_LIB)
 	ar r $@ $^
@@ -35,4 +40,4 @@ bin/%.o : %.c
 
 .PHONY : clean
 clean :
-	rm -f mwis_reduce libmwis_reductions.a $(DEP) $(DEP:.o=.d)
+	rm -f mwis_reduce mwis_visualize libmwis_reductions.a $(DEP) $(DEP:.o=.d)
