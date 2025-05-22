@@ -182,7 +182,45 @@ void display()
         }
     }
 
+    glRasterPos2d(-1, -1);
     glDrawPixels(W, H, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+    glColor4f(1.0, 1.0, 1.0, 0.8);
+    glBegin(GL_QUADS);
+    glVertex2f(-1.0f, 1.0f);
+    glVertex2f(-1.0f, 0.6f);
+    glVertex2f(1.0f, 0.6f);
+    glVertex2f(1.0f, 1.0f);
+    glEnd();
+
+    glBegin(GL_QUADS);
+    glVertex2f(-1.0f, -0.75f);
+    glVertex2f(-1.0f, -0.9f);
+    glVertex2f(1.0f, -0.9f);
+    glVertex2f(1.0f, -0.75f);
+    glEnd();
+
+    glPushMatrix();
+    glColor3f(0.0, 0.0, 0.0);
+    glLineWidth(2.5);
+    glScalef(0.0006, 0.0006, 0.0006);
+    glTranslatef(-1500, 1400, 0);
+
+    static char *title = "Data Reductions in Combinatorial Optimization\0";
+    for (char *p = title; *p != '\0'; p++)
+        glutStrokeCharacter(GLUT_STROKE_ROMAN, *p);
+
+    glTranslatef(-2300, -300, 0);
+    static char *title2 = "for Independence Problems\0";
+    for (char *p = title2; *p != '\0'; p++)
+        glutStrokeCharacter(GLUT_STROKE_ROMAN, *p);
+
+    glTranslatef(-1500, -2500, 0);
+    static char *title3 = "Ernestine Grossmann\0";
+    for (char *p = title3; *p != '\0'; p++)
+        glutStrokeCharacter(GLUT_STROKE_ROMAN, *p);
+    glPopMatrix();
+
     glutSwapBuffers();
 }
 
@@ -368,6 +406,7 @@ int main(int argc, char **argv)
     g = graph_parse(file);
     fclose(file);
     f = force_layout_init(g);
+
     independent_set = malloc(sizeof(int) * g->n);
     active = malloc(sizeof(int) * g->n);
 
@@ -408,6 +447,9 @@ int main(int argc, char **argv)
     glutMouseFunc(mouse);
     glutMotionFunc(mouse_move);
     glutKeyboardFunc(keypress);
+    glEnable(GL_BLEND);
+    glEnable(GL_LINE_SMOOTH);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     // glutFullScreen();
     glutMainLoop();
 
