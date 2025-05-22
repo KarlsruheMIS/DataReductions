@@ -10,7 +10,7 @@ force_layout *force_layout_init(graph *g)
 {
     force_layout *f = malloc(sizeof(force_layout));
 
-    f->n = g->n;
+    f->n = g->_a;
     f->m = OUTER_DIM / INNER_DIM;
 
     f->G = malloc(sizeof(segment) * OUTER_DIM * OUTER_DIM);
@@ -85,7 +85,7 @@ void force_layout_compute_forces_global(force_layout *f, graph *g)
 #pragma omp parallel for
     for (int u = 0; u < f->n; u++)
     {
-        if (!g->A[u])
+        if (u >= g->n || !g->A[u])
             continue;
         int x = roundf(f->V[u].x), y = roundf(f->V[u].y);
         f->G[y * OUTER_DIM + x].weight += 1.0f;
@@ -155,7 +155,7 @@ void force_layout_compute_forces_global(force_layout *f, graph *g)
 #pragma omp parallel for
     for (int u = 0; u < f->n; u++)
     {
-        if (!g->A[u])
+        if (u >= g->n || !g->A[u])
             continue;
         int x = roundf(f->V[u].x), y = roundf(f->V[u].y);
         f->V[u].fx += f->Tf[(y / INNER_DIM) * f->m + x / INNER_DIM].x;
@@ -166,7 +166,7 @@ void force_layout_compute_forces_global(force_layout *f, graph *g)
 #pragma omp parallel for
     for (int u = 0; u < f->n; u++)
     {
-        if (!g->A[u])
+        if (u >= g->n || !g->A[u])
             continue;
         force_layout_compute_local(f->G, f->V[u].y - LOCAL_L / 2, f->V[u].x - LOCAL_L / 2,
                                    f->V[u].x, f->V[u].y,
@@ -181,7 +181,7 @@ void force_layout_step(force_layout *f, graph *g)
 #pragma omp parallel for
     for (int u = 0; u < g->n; u++)
     {
-        if (!g->A[u])
+        if (u >= g->n || !g->A[u])
             continue;
         float fx = c - f->V[u].x, fy = c - f->V[u].y;
         float d = sqrtf(fx * fx + fy * fy) + EPSILON;
@@ -211,7 +211,7 @@ void force_layout_step(force_layout *f, graph *g)
 #pragma omp parallel for
     for (int u = 0; u < g->n; u++)
     {
-        if (!g->A[u])
+        if (u >= g->n || !g->A[u])
             continue;
         float deg = g->D[u] + 1.0f;
         for (int i = 0; i < g->D[u]; i++)
@@ -230,7 +230,7 @@ void force_layout_step(force_layout *f, graph *g)
 #pragma omp parallel for
     for (int u = 0; u < f->n; u++)
     {
-        if (f->V[u].locked || !g->A[u])
+        if (f->V[u].locked || u >= g->n ||  !g->A[u])
             continue;
 
         f->V[u].vx = MOMENTUM * f->V[u].vx + f->V[u].fx * (1.0f - MOMENTUM);

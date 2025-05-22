@@ -5,6 +5,20 @@
 
 #include "graph.h"
 #include "visualizer.h"
+#include "reducer.h"
+
+#include "degree_zero.h"
+#include "degree_one.h"
+#include "triangle.h"
+#include "v_shape.h"
+#include "neighborhood_removal.h"
+#include "simplicial_vertex_with_weight_transfer.h"
+#include "twin.h"
+#include "domination.h"
+#include "critical_set.h"
+#include "unconfined.h"
+#include "extended_domination.h"
+#include "weighted_funnel.h"
 
 #define STEP_TIME 0.03
 #define NODE_SIZE 1
@@ -32,8 +46,8 @@ int center_node = -1;
 int zoom_out = 0;
 long long max_weight = 0, min_weight = INT64_MAX;
 
-void *jp;
-double *p;
+reducer *red;
+reduction_log *r_log;
 
 int rule = 0, node = 0;
 int remaining = 0;
@@ -245,6 +259,37 @@ void idle()
     // printf("\r%.7lf", compute_time / steps);
     // fflush(stdout);
 
+    int do_red = __atomic_fetch_sub(&do_reductions, 1, __ATOMIC_RELAXED);
+    if (do_red == 1)
+    {
+        node_id old_n = g->n;
+        for (int i = 0; i < 100; i++)
+            reducer_reduce_step(red, g, r_log);
+        if (g->n > old_n)
+        {
+            for (node_id u = old_n; u < g->n; u++)
+            {
+                if (!g->A[u])
+                    continue;
+
+                float x = 0.0f, y = 0.0f;
+                for (node_id i = 0; i < g->D[u]; i++)
+                {
+                    node_id v = g->V[u][i];
+                    x += f->V[v].x;
+                    y += f->V[v].y;
+                }
+                f->V[u].x = x / (float)g->D[u];
+                f->V[u].y = y / (float)g->D[u];
+            }
+        }
+        __atomic_fetch_add(&do_reductions, 1, __ATOMIC_RELAXED);
+    }
+    else
+    {
+        __atomic_fetch_add(&do_reductions, 1, __ATOMIC_RELAXED);
+    }
+
     if (zoom_out)
     {
         center_node = -1;
@@ -369,8 +414,20 @@ void keypress(unsigned char key, int x, int y)
         alt_reductions = !alt_reductions;
         break;
     case 'r':
-        for (int i = 0; i < g->n; i++)
-            independent_set[i] = 0;
+        if (do_reductions)
+        {
+            do_reductions = 0;
+            for (node_id u = 0; u < g->n; u++)
+            {
+                if (!g->A[u])
+                    continue;
+
+                if (g->D[u] == 0)
+                    printf("%d\n", u);
+            }
+            reducer_queue_all(red, g);
+            do_reductions = 1;
+        }
         do_reductions = !do_reductions;
         break;
     case 's':
@@ -383,12 +440,9 @@ void keypress(unsigned char key, int x, int y)
         zoom_out = !zoom_out;
         break;
     case 'l':
-        for (int i = 0; i < g->n; i++)
-        {
-            g->A[i] = 1;
-            active[i] = 1;
-        }
-        remaining = g->n;
+        do_reductions = 0;
+        reducer_restore_graph(g, r_log, 0);
+        reducer_queue_all(red, g);
         break;
 
     default:
@@ -405,6 +459,21 @@ int main(int argc, char **argv)
     FILE *file = fopen(argv[1], "r");
     g = graph_parse(file);
     fclose(file);
+
+    red = reducer_init(g, 11,
+                       degree_zero,
+                       degree_one,
+                       neighborhood_removal,
+                       triangle,
+                       v_shape,
+                       twin,
+                       domination,
+                       extended_domination,
+                       simplicial_vertex_with_weight_transfer,
+                       weighted_funnel,
+                       unconfined);
+    r_log = reducer_init_reduction_log(g);
+
     f = force_layout_init(g);
 
     independent_set = malloc(sizeof(int) * g->n);

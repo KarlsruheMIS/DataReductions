@@ -51,3 +51,9 @@ void reducer_exclude_vertex(reducer *r, graph *g, reduction_log *l, node_id u);
 void reducer_restore_graph(graph *g, reduction_log *l, long long t);
 
 void reducer_lift_solution(reduction_log *l, int *I);
+
+reduction_log *reducer_init_reduction_log(graph *g);
+
+void reducer_reduce_step(reducer *r, graph *g, reduction_log *l);
+
+void reducer_queue_all(reducer *r, graph *g);

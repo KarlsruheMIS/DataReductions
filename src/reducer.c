@@ -4,6 +4,7 @@
 #include "extended_struction.h"
 
 #include <stdlib.h>
+#include <assert.h>
 
 reducer *reducer_init(graph *g, int n_rules, ...)
 {
@@ -316,5 +317,74 @@ void reducer_lift_solution(reduction_log *l, int *I)
     for (long long i = l->n - 1; i >= 0; i--)
     {
         l->Log_rule[i].reconstruct(I, l->Log_data + i);
+    }
+}
+
+void reducer_reduce_step(reducer *r, graph *g, reduction_log *l)
+{
+    int rule = 0;
+    while (rule < r->n_rules)
+    {
+        if (r->Queue_count[rule] == 0)
+        {
+            rule++;
+            continue;
+        }
+        node_id u;
+        if (r->Rule[rule].global)
+        {
+            u = 0;
+            while (r->Queue_count[rule] > 0)
+            {
+                node_id v = r->Queues[rule][--r->Queue_count[rule]];
+                r->In_queues[rule][v] = 0;
+            }
+        }
+        else
+        {
+            u = r->Queues[rule][--r->Queue_count[rule]];
+            r->In_queues[rule][u] = 0;
+
+            if (!g->A[u])
+                continue;
+        }
+
+        if (g->D[u] == 0)
+        {
+            assert(rule == 0 && g->A[u]);
+            printf("%d from reducer\n", u);
+        }
+
+        int res = reducer_apply_reduction(g, u, r->Rule[rule], r, l);
+
+        if (res)
+        {
+            if (g->D[u] == 0)
+                printf("%d from reducer post\n", u);
+            return;
+        }
+    }
+}
+
+void reducer_queue_all(reducer *r, graph *g)
+{
+    for (int i = 0; i < r->n_rules; i++)
+    {
+        r->Queue_count[i] = g->nr;
+
+        for (long long j = 0; j < g->n; j++)
+        {
+            if (!g->A[j])
+            {
+                r->In_queues[i][j] = 0;
+                continue;
+            }
+            r->Queues[i][j] = j;
+            r->In_queues[i][j] = 1;
+        }
+        for (long long j = g->n; j < r->_a; j++)
+        {
+            r->In_queues[i][j] = 0;
+        }
     }
 }
