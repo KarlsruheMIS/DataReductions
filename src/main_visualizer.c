@@ -238,29 +238,19 @@ void display()
     glutSwapBuffers();
 }
 
+int flag = 1;
+
 void idle()
 {
-    if (pause)
-        return;
-    // static double time = 0.0;
-    // double t = omp_get_wtime();
-    // time += t - time_ref;
-    // time_ref = t;
-    // if (time < STEP_TIME)
-    //     return;
-    // while (time > STEP_TIME)
-    // {
-    //     double t0 = omp_get_wtime();
-    //     force_layout_step(f, g);
-    //     compute_time += omp_get_wtime() - t0;
-    //     steps += 1.0;
-    //     time -= STEP_TIME;
-    // }
-    // printf("\r%.7lf", compute_time / steps);
-    // fflush(stdout);
+    int flag = __atomic_fetch_sub(&flag, 1, __ATOMIC_RELAXED);
 
-    int do_red = __atomic_fetch_sub(&do_reductions, 1, __ATOMIC_RELAXED);
-    if (do_red == 1)
+    if (flag < 0)
+    {
+        __atomic_fetch_add(&flag, 1, __ATOMIC_RELAXED);
+        return;
+    }
+
+    if (do_reductions)
     {
         node_id old_n = g->n;
         for (int i = 0; i < 100; i++)
@@ -283,35 +273,6 @@ void idle()
                 f->V[u].y = y / (float)g->D[u];
             }
         }
-        __atomic_fetch_add(&do_reductions, 1, __ATOMIC_RELAXED);
-    }
-    else
-    {
-        __atomic_fetch_add(&do_reductions, 1, __ATOMIC_RELAXED);
-    }
-
-    if (zoom_out)
-    {
-        center_node = -1;
-
-        float fx = ((float)OUTER_DIM / 2) - cx;
-        float fy = ((float)OUTER_DIM / 2) - cy;
-
-        float d = sqrtf(fx * fx + fy * fy) + EPSILON;
-
-        cx += fx * (0.1 / (zoom * zoom));
-        cy += fy * (0.1 / (zoom * zoom));
-
-        zoom /= 1.01;
-        if (zoom < 0.7)
-        {
-            zoom = 0.7;
-        }
-        if (d < 5.0 && zoom <= 0.7)
-        {
-            zoom_out = 0;
-        }
-        node_size = (sqrt(zoom) * 2) + NODE_SIZE;
     }
 
     if (run_simulation)
@@ -319,6 +280,8 @@ void idle()
 
     // If nothing changed, don't update
     glutPostRedisplay();
+
+    __atomic_fetch_add(&flag, 1, __ATOMIC_RELAXED);
 }
 
 void mouse(int button, int state, int x, int y)
@@ -395,23 +358,21 @@ void mouse_move(int _x, int _y)
 
 void keypress(unsigned char key, int x, int y)
 {
+    int flag = __atomic_fetch_sub(&flag, 1, __ATOMIC_RELAXED);
+
+    if (flag < 0)
+    {
+        __atomic_fetch_add(&flag, 1, __ATOMIC_RELAXED);
+        return;
+    }
+
     switch (key)
     {
     case 'w':
         show_weights = !show_weights;
         break;
     case 'q':
-        pause = !pause;
-        if (pause)
-            glutIdleFunc(NULL);
-        else
-            glutIdleFunc(idle);
-        break;
-    case 'i':
-        show_solution = !show_solution;
-        break;
-    case 'a':
-        alt_reductions = !alt_reductions;
+        exit(0);
         break;
     case 'r':
         if (do_reductions)
@@ -430,16 +391,7 @@ void keypress(unsigned char key, int x, int y)
         }
         do_reductions = !do_reductions;
         break;
-    case 's':
-        run_simulation = !run_simulation;
-        break;
-    case 'p':
-        center_node = 25118;
-        break;
-    case 'z':
-        zoom_out = !zoom_out;
-        break;
-    case 'l':
+    case 'u':
         do_reductions = 0;
         reducer_restore_graph(g, r_log, 0);
         reducer_queue_all(red, g);
@@ -448,6 +400,8 @@ void keypress(unsigned char key, int x, int y)
     default:
         break;
     }
+
+    __atomic_fetch_add(&flag, 1, __ATOMIC_RELAXED);
 }
 
 int main(int argc, char **argv)
