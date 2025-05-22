@@ -26,14 +26,14 @@
 const unsigned int W = 1920;
 const unsigned int H = 1080;
 
+unsigned int threads = 16;
+
 double zoom = 0.5;
 double cx = OUTER_DIM / 2, cy = OUTER_DIM / 2;
 int node_size = NODE_SIZE;
 
 int selected_node = -1;
 int mx, my;
-
-int drawing_threads = 4;
 
 graph *g;
 force_layout *f;
@@ -45,6 +45,9 @@ int run_simulation = 1, do_reductions = 0, alt_reductions = 0, pause = 0;
 int center_node = -1;
 int zoom_out = 0;
 long long max_weight = 0, min_weight = INT64_MAX;
+
+int random_idle = 0;
+int zoom_dir = 0;
 
 reducer *red;
 reduction_log *r_log;
@@ -132,20 +135,15 @@ static inline void translate_point_reverse(float *x, float *y)
 
 void display()
 {
+    omp_set_num_threads(threads);
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    if (center_node >= 0)
-    {
-        cx = f->V[center_node].x;
-        cy = f->V[center_node].y;
-    }
-
-#pragma omp parallel for
+#pragma omp parallel for schedule(static, 256)
     for (int i = 0; i < W * H * 3; i++)
         image[i] = (unsigned char)255;
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static, 256)
     for (int u = 0; u < g->n; u++)
     {
         if (!g->A[u])
@@ -165,7 +163,7 @@ void display()
     }
 
     // TODO, make par optional
-#pragma omp parallel for num_threads(drawing_threads)
+#pragma omp parallel for schedule(static, 256)
     for (int i = 0; i < g->n; i++)
     {
         if (!g->A[i])
@@ -238,22 +236,89 @@ void display()
     glutSwapBuffers();
 }
 
-int flag = 1;
+long long it = 0;
 
 void idle()
 {
-    int flag = __atomic_fetch_sub(&flag, 1, __ATOMIC_RELAXED);
+    omp_set_num_threads(threads);
 
-    if (flag < 0)
+    if (random_idle)
     {
-        __atomic_fetch_add(&flag, 1, __ATOMIC_RELAXED);
-        return;
+        if (center_node >= 0)
+        {
+            float _x = 0.0, _y = 0.0;
+            if (do_reductions)
+            {
+                _x = f->V[center_node].x;
+                _y = f->V[center_node].y;
+            }
+            else
+            {
+                _x = OUTER_DIM / 2;
+                _y = OUTER_DIM / 2;
+            }
+            float fx = _x - cx, fy = _y - cy;
+            float d = sqrtf(fx * fx + fy * fy);
+            if (d < 1.0)
+            {
+                cx = _x;
+                cy = _y;
+            }
+            else
+            {
+                cx += (fx / d) * 0.2;
+                cy += (fy / d) * 0.2;
+            }
+        }
+
+        if (!do_reductions)
+        {
+            zoom /= 1.001f;
+            if (zoom < 0.5)
+                zoom = 0.5;
+            node_size = (sqrt(zoom) * 1.5) + NODE_SIZE;
+        }
+        else
+        {
+            zoom *= 1.001f;
+            if (zoom > 3.0)
+                zoom = 3.0;
+            node_size = (sqrt(zoom) * 1.5) + NODE_SIZE;
+        }
+
+        if ((it % (1 << 8)) == 0)
+        {
+            if (zoom <= 0.5 && g->nr == g->n)
+            {
+                do_reductions = 1;
+            }
+
+            if (zoom <= 0.5 && g->nr != g->n)
+            {
+                reducer_restore_graph(g, r_log, 0);
+                reducer_queue_all(red, g);
+            }
+        }
+
+        if ((it % (1 << 10)) == 0 || !g->A[center_node])
+        {
+
+            it = 0;
+            if (g->nr > 0)
+            {
+                center_node = rand() % g->n;
+                while (!g->A[center_node])
+                    center_node = rand() % g->n;
+            }
+            // printf("Changing center to %d\n", center_node);
+        }
+        it++;
     }
 
     if (do_reductions)
     {
-        node_id old_n = g->n;
-        for (int i = 0; i < 100; i++)
+        node_id old_n = g->n, old_nr = g->nr, old_m = g->m;
+        for (int i = 0; i < 10; i++)
             reducer_reduce_step(red, g, r_log);
         if (g->n > old_n)
         {
@@ -273,6 +338,11 @@ void idle()
                 f->V[u].y = y / (float)g->D[u];
             }
         }
+
+        if (old_m == g->m && old_nr == g->nr)
+        {
+            do_reductions = 0;
+        }
     }
 
     if (run_simulation)
@@ -280,8 +350,6 @@ void idle()
 
     // If nothing changed, don't update
     glutPostRedisplay();
-
-    __atomic_fetch_add(&flag, 1, __ATOMIC_RELAXED);
 }
 
 void mouse(int button, int state, int x, int y)
@@ -358,14 +426,6 @@ void mouse_move(int _x, int _y)
 
 void keypress(unsigned char key, int x, int y)
 {
-    int flag = __atomic_fetch_sub(&flag, 1, __ATOMIC_RELAXED);
-
-    if (flag < 0)
-    {
-        __atomic_fetch_add(&flag, 1, __ATOMIC_RELAXED);
-        return;
-    }
-
     switch (key)
     {
     case 'w':
@@ -375,21 +435,8 @@ void keypress(unsigned char key, int x, int y)
         exit(0);
         break;
     case 'r':
-        if (do_reductions)
-        {
-            do_reductions = 0;
-            for (node_id u = 0; u < g->n; u++)
-            {
-                if (!g->A[u])
-                    continue;
-
-                if (g->D[u] == 0)
-                    printf("%d\n", u);
-            }
-            reducer_queue_all(red, g);
-            do_reductions = 1;
-        }
-        do_reductions = !do_reductions;
+        do_reductions = 1;
+        random_idle = 1;
         break;
     case 'u':
         do_reductions = 0;
@@ -400,13 +447,13 @@ void keypress(unsigned char key, int x, int y)
     default:
         break;
     }
-
-    __atomic_fetch_add(&flag, 1, __ATOMIC_RELAXED);
 }
 
 int main(int argc, char **argv)
 {
-    drawing_threads = atoi(argv[1]);
+    omp_set_num_threads(threads);
+
+    // drawing_threads = atoi(argv[1]);
 
     node_size = (sqrt(zoom) * 2) + NODE_SIZE;
 
@@ -454,10 +501,12 @@ int main(int argc, char **argv)
 
     time_ref = omp_get_wtime();
 
-    for (int i = 0; i < 50; i++)
+    for (int i = 0; i < 2000; i++)
     {
         force_layout_step(f, g);
     }
+
+    threads = 4;
 
     printf("%.5lf\n", omp_get_wtime() - time_ref);
 
@@ -473,7 +522,7 @@ int main(int argc, char **argv)
     glEnable(GL_BLEND);
     glEnable(GL_LINE_SMOOTH);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // glutFullScreen();
+    glutFullScreen();
     glutMainLoop();
 
     graph_free(g);

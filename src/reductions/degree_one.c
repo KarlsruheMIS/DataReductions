@@ -18,15 +18,17 @@ int degree_one_reduce_graph(graph *g, node_id u, node_weight *offset,
     if (g->W[u] >= g->W[d->v])
     {
         graph_deactivate_neighborhood(g, u);
+
+        reduction_data_queue_distance_two(g, d->v, c);
     }
     else
     {
         graph_deactivate_vertex(g, u);
         g->W[d->v] -= g->W[u];
         d->z = 1; // flag for folding
-    }
 
-    reduction_data_queue_distance_one(g, d->v, c);
+        reduction_data_queue_distance_one(g, d->v, c);
+    }
 
     return 1;
 }

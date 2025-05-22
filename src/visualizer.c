@@ -178,7 +178,7 @@ void force_layout_step(force_layout *f, graph *g)
 {
     float c = OUTER_DIM / 2;
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static, 256)
     for (int u = 0; u < g->n; u++)
     {
         if (u >= g->n || !g->A[u])
@@ -208,7 +208,7 @@ void force_layout_step(force_layout *f, graph *g)
     //         }
     //     }
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static, 256)
     for (int u = 0; u < g->n; u++)
     {
         if (u >= g->n || !g->A[u])
@@ -227,7 +227,7 @@ void force_layout_step(force_layout *f, graph *g)
         }
     }
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static, 256)
     for (int u = 0; u < f->n; u++)
     {
         if (f->V[u].locked || u >= g->n ||  !g->A[u])

@@ -349,18 +349,10 @@ void reducer_reduce_step(reducer *r, graph *g, reduction_log *l)
                 continue;
         }
 
-        if (g->D[u] == 0)
-        {
-            assert(rule == 0 && g->A[u]);
-            printf("%d from reducer\n", u);
-        }
-
         int res = reducer_apply_reduction(g, u, r->Rule[rule], r, l);
 
         if (res)
         {
-            if (g->D[u] == 0)
-                printf("%d from reducer post\n", u);
             return;
         }
     }

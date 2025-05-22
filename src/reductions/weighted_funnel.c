@@ -57,7 +57,10 @@ int weighted_funnel_apply(graph *g, node_id u, node_id v, node_weight *offset,
         {
             node_id w = g->V[u][i];
             if (_N[w] < t)
+            {
                 graph_deactivate_vertex(g, w);
+                reduction_data_queue_distance_one(g, w, c);
+            }
             else
                 data->NA[d->x++] = w;
         }
@@ -90,7 +93,10 @@ int weighted_funnel_apply(graph *g, node_id u, node_id v, node_weight *offset,
         {
             node_id w = g->V[u][i];
             if (w != v && _N[w] < t)
+            {
                 graph_deactivate_vertex(g, w);
+                reduction_data_queue_distance_one(g, w, c);
+            }
             else if (w != v)
                 data->NA[d->x++] = w;
         }

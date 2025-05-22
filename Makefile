@@ -1,7 +1,7 @@
 SHELL = /bin/bash
 
 CC = gcc
-CFLAGS = -g -std=gnu17 -O3 -I include -I include/reductions
+CFLAGS = -g -std=gnu17 -O3 -I include -I include/reductions -fopenmp
 
 OBJ_SHARED = graph.o reducer.o reduction.o \
 			 degree_zero.o degree_one.o domination.o neighborhood_removal.o twin.o \
@@ -30,7 +30,7 @@ mwis_reduce : $(OBJ_REDUCE)
 	$(CC) $(CFLAGS) -o $@ $^
 
 mwis_visualize : $(OBJ_VIS)
-	$(CC) $(CFLAGS) -fopenmp -o $@ $^ -lm -lglut -lGLU -lGL
+	$(CC) $(CFLAGS) -o $@ $^ -lm -lglut -lGLU -lGL
 
 libmwis_reductions.a : $(OBJ_LIB)
 	ar r $@ $^
