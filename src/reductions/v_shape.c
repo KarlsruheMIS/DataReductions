@@ -30,79 +30,47 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
 
     // flag to track the reduction case
     d->z = 0;
-
     d->u = u;
+    d->n = g->l;
     *offset = g->W[u];
-    d->data = NULL;
 
     if (g->W[u] < g->W[d->x])
     {
         d->z = 1;
-        d->n = 0;
 
-        node_id *added_edges = malloc(sizeof(node_id) * (g->D[d->x] + g->D[d->y]));
-
-        b->fast_sets[0][u] = b->t;
         // go through neighborhoods seperately, since edge insertions make it not possible to go through g->V[u]
         for (node_id i = 0; i < g->D[d->x]; i++)
         {
             node_id w = g->V[d->x][i];
-            if (b->fast_sets[0][w] < b->t)
-            {
-                b->fast_sets[0][w] = b->t;
-                graph_insert_edge(g, u, w);
-                added_edges[d->n++] = w;
-            }
+            graph_add_edge(g, u, w);
         }
         for (node_id i = 0; i < g->D[d->y]; i++)
         {
             node_id w = g->V[d->y][i];
-            if (b->fast_sets[0][w] < b->t)
-            {
-                b->fast_sets[0][w] = b->t;
-                graph_insert_edge(g, u, w);
-                added_edges[d->n++] = w;
-            }
+            graph_add_edge(g, u, w);
         }
-        d->data = (void *)added_edges;
 
         reduction_data_queue_distance_one(g, u, c);
 
         graph_remove_edge(g, u, d->x);
         graph_remove_edge(g, u, d->y);
 
-        g->W[d->x] -= g->W[u];
-        g->W[d->y] -= g->W[u];
+        graph_change_vertex_weight(g, d->x, g->W[d->x] - g->W[u]);
+        graph_change_vertex_weight(g, d->y, g->W[d->y] - g->W[u]);
     }
     else if (g->W[u] < g->W[d->y])
     {
         d->z = 2;
-        d->n = 0;
-
-        node_id *added_edges = malloc(sizeof(node_id) * (g->D[d->x] + g->D[d->y]));
 
         graph_deactivate_vertex(g, u);
 
-        g->W[d->y] -= g->W[u];
+        graph_change_vertex_weight(g, d->y, g->W[d->y] - g->W[u]);
 
-        for (node_id i = 0; i < g->D[d->x]; i++)
-        {
-            node_id w = g->V[d->x][i];
-            b->fast_sets[0][w] = b->t;
-        }
         for (node_id i = 0; i < g->D[d->y]; i++)
         {
             node_id w = g->V[d->y][i];
-
-            if (b->fast_sets[0][w] < b->t)
-            {
-                b->fast_sets[0][w] = b->t;
-                graph_insert_edge(g, d->x, w);
-                added_edges[d->n++] = w;
-            }
+            graph_add_edge(g, d->x, w);
         }
-
-        d->data = (void *)added_edges;
 
         reduction_data_queue_distance_one(g, d->x, c);
         reduction_data_queue_distance_one(g, d->y, c);
@@ -112,6 +80,7 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
         if (g->W[u] >= g->W[d->x] + g->W[d->y])
         {
             d->z = 3;
+
             graph_deactivate_neighborhood(g, u);
 
             reduction_data_queue_distance_two(g, u, c);
@@ -120,28 +89,16 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
         {
             d->z = 4;
 
-            d->v = g->n; // node_id of new created vertex for fold
-
-            graph_add_vertex(g, g->W[d->x] + g->W[d->y] - g->W[u]);
-
-            b->fast_sets[0][u] = b->t;
-            for (node_id i = 0; i < g->D[u]; i++)
+            d->v = d->x;
+            for (node_id i = 0; i < g->D[d->y]; i++)
             {
-                node_id v = g->V[u][i];
-
-                for (node_id j = 0; j < g->D[v]; j++)
-                {
-                    node_id w = g->V[v][j];
-
-                    if (b->fast_sets[0][w] < b->t)
-                    {
-                        b->fast_sets[0][w] = b->t;
-                        graph_insert_edge(g, d->v, w);
-                    }
-                }
+                node_id v = g->V[d->y][i];
+                graph_add_edge(g, d->v, v);
             }
 
-            graph_deactivate_neighborhood(g, u);
+            graph_change_vertex_weight(g, d->v, (g->W[d->x] + g->W[d->y]) - g->W[u]);
+            graph_deactivate_vertex(g, u);
+            graph_deactivate_vertex(g, d->y);
 
             reduction_data_queue_distance_one(g, d->v, c);
         }
@@ -152,45 +109,7 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
 
 void v_shape_restore_graph(graph *g, reconstruction_data *d)
 {
-    if (d->z == 1)
-    {
-        node_id *added_edges = (node_id *)d->data;
-        for (node_id i = 0; i < d->n; i++)
-        {
-            node_id v = added_edges[i];
-            graph_remove_edge(g, d->u, v);
-        }
-
-        graph_insert_edge(g, d->u, d->x);
-        graph_insert_edge(g, d->u, d->y);
-
-        g->W[d->x] += g->W[d->u];
-        g->W[d->y] += g->W[d->u];
-    }
-    else if (d->z == 2)
-    {
-        graph_activate_vertex(g, d->u);
-
-        node_id *added_edges = (node_id *)d->data;
-        for (node_id i = 0; i < d->n; i++)
-        {
-            node_id v = added_edges[i];
-            graph_remove_edge(g, d->x, v);
-        }
-
-        g->W[d->y] += g->W[d->u];
-    }
-    else if (d->z == 3)
-    {
-        graph_activate_neighborhood(g, d->u);
-    }
-    else
-    {
-        graph_deactivate_vertex(g, d->v);
-        graph_remove_last_added_vertex(g);
-
-        graph_activate_neighborhood(g, d->u);
-    }
+    graph_undo_changes(g, d->n);
 }
 
 void v_shape_reconstruct_solution(int *I, reconstruction_data *d)
@@ -204,7 +123,7 @@ void v_shape_reconstruct_solution(int *I, reconstruction_data *d)
     }
     else if (d->z == 2)
     {
-        if (!I[d->x]&& !I[d->y])
+        if (!I[d->x] && !I[d->y])
             I[d->u] = 1;
     }
     else if (d->z == 3)
@@ -228,6 +147,4 @@ void v_shape_reconstruct_solution(int *I, reconstruction_data *d)
 
 void v_shape_clean(reconstruction_data *d)
 {
-    node_id *added_edges = (node_id *)d->data;
-    free(added_edges);
 }

@@ -24,6 +24,9 @@ typedef struct
 
     long long _a;  // Number of vertices allocated memory for
     long long *_A; // Allocated memory per neighborhood
+
+    long long l, _La; // Log counter and allocated memory
+    void *Log;        // Log data
 } graph;
 
 graph *graph_init();

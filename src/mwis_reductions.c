@@ -42,7 +42,7 @@ reduction_data *build_reduced_graph(graph *g, reduction_log *l, long long orgina
             forward_map[i] = n_reduced;
             reverse_map[n_reduced] = i;
             n_reduced++;
-            graph_add_vertex(rg, g->W[i]);
+            graph_construction_add_vertex(rg, g->W[i]);
         }
         else
         {
@@ -59,10 +59,10 @@ reduction_data *build_reduced_graph(graph *g, reduction_log *l, long long orgina
         for (node_id j = 0; j < g->D[ou]; j++)
         {
             node_id v = forward_map[g->V[ou][j]];
-            graph_add_edge(rg, u, v);
+            graph_construction_add_edge(rg, u, v);
         }
     }
-    graph_sort_edges(rg);
+    graph_construction_sort_edges(rg);
 
     reduction_data *rd = malloc(sizeof(reduction_data));
     *rd = (reduction_data){
@@ -81,7 +81,7 @@ reduction_data *build_reduced_graph(graph *g, reduction_log *l, long long orgina
 
 void *mwis_reduction_reduce_graph(graph *g, double tl)
 {
-    graph_sort_edges(g);
+    graph_construction_sort_edges(g);
     long long orginal_size = g->n;
     reducer *r = reducer_init(g, 11,
                               degree_zero,
@@ -89,12 +89,12 @@ void *mwis_reduction_reduce_graph(graph *g, double tl)
                               neighborhood_removal,
                               triangle,
                               v_shape,
-                              twin,
                               domination,
-                              extended_domination,
+                              twin,
                               simplicial_vertex_with_weight_transfer,
                               weighted_funnel,
-                              unconfined);
+                              unconfined,
+                              extended_domination);
 
     reduction_log *l = reducer_reduce(r, g, tl);
     reducer_free(r);
@@ -105,7 +105,7 @@ void *mwis_reduction_reduce_graph(graph *g, double tl)
 void *mwis_reduction_run_struction(graph *g, double tl)
 {
     double t0 = get_wtime();
-    graph_sort_edges(g);
+    graph_construction_sort_edges(g);
     long long orginal_size = g->n;
     reducer *r = reducer_init(g, 11,
                               degree_zero,
@@ -113,19 +113,18 @@ void *mwis_reduction_run_struction(graph *g, double tl)
                               neighborhood_removal,
                               triangle,
                               v_shape,
-                              twin,
                               domination,
-                              extended_domination,
+                              twin,
                               simplicial_vertex_with_weight_transfer,
                               weighted_funnel,
-                              unconfined);
+                              unconfined,
+                              extended_domination);
 
-    reduction_log *l = reducer_reduce(r, g, tl);
+    reduction_log *l = reducer_init_reduction_log(g);
     double t1 = get_wtime();
     double elapsed = t1 - t0;
-    r->n_rules = 8;
-    reducer_struction(r, g, l, 0, tl - elapsed);
-    r->n_rules = 11;
+
+    reducer_struction_fast(r, g, l, tl - elapsed);
     reducer_free(r);
 
     return (void *)build_reduced_graph(g, l, orginal_size);

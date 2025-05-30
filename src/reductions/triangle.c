@@ -31,6 +31,7 @@ int triangle_reduce_graph(graph *g, node_id u, node_weight *offset,
     d->z = 0;
 
     d->u = u;
+    d->n = g->l;
     *offset = g->W[u];
 
     if (g->W[u] < g->W[d->x])
@@ -39,8 +40,8 @@ int triangle_reduce_graph(graph *g, node_id u, node_weight *offset,
 
         graph_deactivate_vertex(g, u);
 
-        g->W[d->x] -= g->W[u];
-        g->W[d->y] -= g->W[u];
+        graph_change_vertex_weight(g, d->x, g->W[d->x] - g->W[u]);
+        graph_change_vertex_weight(g, d->y, g->W[d->y] - g->W[u]);
 
         reduction_data_queue_distance_two(g, u, c);
     }
@@ -51,7 +52,7 @@ int triangle_reduce_graph(graph *g, node_id u, node_weight *offset,
         graph_deactivate_vertex(g, u);
         graph_deactivate_vertex(g, d->x);
 
-        g->W[d->y] -= g->W[u];
+        graph_change_vertex_weight(g, d->y, g->W[d->y] - g->W[u]);
 
         reduction_data_queue_distance_one(g, d->x, c);
         reduction_data_queue_distance_one(g, d->y, c);
@@ -72,24 +73,7 @@ void triangle_restore_graph(graph *g, reconstruction_data *d)
 {
     assert(!g->A[d->u]);
 
-    if (d->z == 1)
-    {
-        graph_activate_vertex(g, d->u);
-
-        g->W[d->x] += g->W[d->u];
-        g->W[d->y] += g->W[d->u];
-    }
-    else if (d->z == 2)
-    {
-        graph_activate_vertex(g, d->x);
-        graph_activate_vertex(g, d->u);
-
-        g->W[d->y] += g->W[d->u];
-    }
-    else
-    {
-        graph_activate_neighborhood(g, d->u);
-    }
+    graph_undo_changes(g, d->n);
 }
 
 void triangle_reconstruct_solution(int *I, reconstruction_data *d)

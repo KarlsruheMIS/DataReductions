@@ -1,6 +1,8 @@
 #include "graph.h"
 #include "reducer.h"
 #include "algorithms.h"
+#include "clique_cover.h"
+#include "branch_and_reduce.h"
 
 #include "degree_zero.h"
 #include "degree_one.h"
@@ -9,7 +11,6 @@
 #include "neighborhood_removal.h"
 #include "simplicial_vertex.h"
 #include "simplicial_vertex_with_weight_transfer.h"
-#include "simultaneous_set.h"
 #include "triangle.h"
 #include "twin.h"
 #include "unconfined.h"
@@ -28,42 +29,27 @@ int main(int argc, char **argv)
     graph *g = graph_parse(f);
     fclose(f);
 
-    f = fopen(argv[1], "r");
-    graph *copy = graph_parse(f);
-    fclose(f);
-
-    printf("%10lld %10lld\n", g->nr, g->m);
-
     long long n = g->n, m = g->m;
 
-    reducer *r = reducer_init(g, 12,
+    reducer *r = reducer_init(g, 11,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
                               triangle,
                               v_shape,
-                              simultaneous_set,
                               domination,
                               twin,
                               simplicial_vertex_with_weight_transfer,
                               weighted_funnel,
                               unconfined,
-                              extended_domination,
-                              critical_set);
+                              extended_domination);
 
     double start = get_wtime();
-    reduction_log *l = reducer_reduce(r, g, 3000);
-    printf("%10lld %10lld\n", g->nr, g->m);
-    r->verbose = 1;
-    reducer_struction(r, g, l, 1, 120);
-    reducer_struction(r, g, l, 0, 120);
-    double elapsed = get_wtime() - start;
 
-    for (int i = 0; i < g->n; i++)
-    {
-        if (g->A[i] && g->W[i] > 1)
-            printf("%d %lld\n", i, g->W[i]);
-    }
+    reduction_log *l = reducer_init_reduction_log(g);
+    reducer_struction_fast(r, g, l, 6000);
+
+    double elapsed = get_wtime() - start;
 
     int offset = 0, p = 0;
     while (argv[1][p] != '\0')
@@ -83,54 +69,7 @@ int main(int argc, char **argv)
     reducer_lift_solution(l, I);
     reducer_restore_graph(g, l, 0);
 
-    assert(g->n == n);
-    for (node_id u = 0; u < g->n; u++)
-    {
-        assert(g->W[u] == copy->W[u]);
-        assert(g->D[u] == copy->D[u]);
-    }
-
-    long long w = 0;
-    for (node_id i = 0; i < copy->n; i++)
-    {
-        if (!I[i])
-            continue;
-
-        w += copy->W[i];
-        for (node_id j = 0; j < copy->D[i]; j++)
-        {
-            if (I[copy->V[i][j]])
-                printf("Error\n");
-        }
-    }
-
-    // printf("%lld\n", w);
-
-    // f = fopen("kernel.csv", "w");
-    // fprintf(f, "source,target\n");
-    // for (node_id u = 0; u < g->n; u++)
-    // {
-    //     if (!g->A[u])
-    //         continue;
-
-    //     for (node_id i = 0; i < g->D[u]; i++)
-    //     {
-    //         node_id v = g->V[u][i];
-    //         fprintf(f, "%d,%d\n", u, v);
-    //     }
-    // }
-    // fclose(f);
-
-    // f = fopen("kernel_meta.csv", "w");
-    // fprintf(f, "id,weight\n");
-    // for (node_id u = 0; u < g->n; u++)
-    // {
-    //     if (!g->A[u])
-    //         continue;
-
-    //     fprintf(f, "%d,%lld\n", u, g->W[u]);
-    // }
-    // fclose(f);
+    assert(g->n == n && g->m == m);
 
     free(I);
 
@@ -138,7 +77,6 @@ int main(int argc, char **argv)
     reducer_free(r);
 
     graph_free(g);
-    graph_free(copy);
 
     return 0;
 }

@@ -12,23 +12,22 @@ int degree_one_reduce_graph(graph *g, node_id u, node_weight *offset,
 
     *offset = g->W[u];
     d->u = u;
-    d->z = 0;
     d->v = g->V[u][0];
+    d->n = g->l;
+    d->z = 0;
 
     if (g->W[u] >= g->W[d->v])
     {
         graph_deactivate_neighborhood(g, u);
-
-        reduction_data_queue_distance_two(g, d->v, c);
     }
     else
     {
         graph_deactivate_vertex(g, u);
-        g->W[d->v] -= g->W[u];
+        graph_change_vertex_weight(g, d->v, g->W[d->v] - g->W[u]);
         d->z = 1; // flag for folding
-
-        reduction_data_queue_distance_one(g, d->v, c);
     }
+
+    reduction_data_queue_distance_one(g, d->v, c);
 
     return 1;
 }
@@ -37,30 +36,14 @@ void degree_one_restore_graph(graph *g, reconstruction_data *d)
 {
     assert(!g->A[d->u]);
 
-    if (!d->z)
-    {
-        assert(g->W[d->u] >= g->W[d->v]);
-        graph_activate_neighborhood(g, d->u);
-    }
-    else
-    {
-        graph_activate_vertex(g, d->u);
-        g->W[d->v] += g->W[d->u];
-    }
+    graph_undo_changes(g, d->n);
 }
 
 void degree_one_reconstruct_solution(int *I, reconstruction_data *d)
 {
-    if (!d->z)
+    if (!d->z || !I[d->v])
     {
         I[d->u] = 1;
-    }
-    else
-    {
-        if (I[d->v])
-            I[d->u] = 0;
-        else
-            I[d->u] = 1;
     }
 }
 

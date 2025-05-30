@@ -246,7 +246,8 @@ int critical_set_reduce_graph(graph *g, node_id u, node_weight *offset,
     }
     if (n_red > 0)
     {
-        d->n = n_red;
+        d->n = g->l;
+        d->x = n_red;
         d->data = (void *)red;
         *offset = 0;
 
@@ -286,20 +287,13 @@ int critical_set_reduce_graph(graph *g, node_id u, node_weight *offset,
 
 void critical_set_restore_graph(graph *g, reconstruction_data *d)
 {
-    node_id *red = (node_id *)d->data;
-    node_id n_red = d->n;
-
-    for (node_id i = n_red - 1; i >= 0; i--)
-    {
-        node_id u = red[i];
-        graph_activate_neighborhood(g, u);
-    }
+    graph_undo_changes(g, d->n);
 }
 
 void critical_set_reconstruct_solution(int *I, reconstruction_data *d)
 {
     node_id *red = (node_id *)d->data;
-    node_id n_red = d->n;
+    node_id n_red = d->x;
 
     for (node_id i = 0; i < n_red; i++)
     {
@@ -310,6 +304,5 @@ void critical_set_reconstruct_solution(int *I, reconstruction_data *d)
 
 void critical_set_clean(reconstruction_data *d)
 {
-    node_id *red = (node_id *)d->data;
-    free(red);
+    free(d->data);
 }

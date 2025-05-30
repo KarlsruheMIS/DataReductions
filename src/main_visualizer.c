@@ -443,6 +443,9 @@ void keypress(unsigned char key, int x, int y)
         reducer_restore_graph(g, r_log, 0);
         reducer_queue_all(red, g);
         break;
+    case 's':
+        run_simulation = !run_simulation;
+        break;
 
     default:
         break;
@@ -473,7 +476,10 @@ int main(int argc, char **argv)
                        simplicial_vertex_with_weight_transfer,
                        weighted_funnel,
                        unconfined);
+
     r_log = reducer_init_reduction_log(g);
+
+    reducer_struction_fast(red, g, r_log, 60);
 
     f = force_layout_init(g);
 

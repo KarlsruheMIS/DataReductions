@@ -44,6 +44,8 @@ void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l, double tl);
 
 void reducer_struction(reducer *r, graph *g, reduction_log *l, int limit_m, double tl);
 
+void reducer_struction_fast(reducer *r, graph *g, reduction_log *l, double tl);
+
 void reducer_include_vertex(reducer *r, graph *g, reduction_log *l, node_id u);
 
 void reducer_exclude_vertex(reducer *r, graph *g, reduction_log *l, node_id u);

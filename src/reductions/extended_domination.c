@@ -3,9 +3,8 @@
 
 #include <assert.h>
 
-
 int extended_domination_reduce_graph(graph *g, node_id u, node_weight *offset,
-                            buffers *b, change_list *c, reconstruction_data *d)
+                                     buffers *b, change_list *c, reconstruction_data *d)
 {
     assert(g->A[u]);
 
@@ -21,14 +20,16 @@ int extended_domination_reduce_graph(graph *g, node_id u, node_weight *offset,
     if (md < 0 || g->D[md] > MAX_DOMINATION)
         return 0;
 
+    *offset = 0;
+    d->n = g->l;
+
     if (g->W[md] > g->W[u] && g->D[md] >= g->D[u] &&
         set_is_subset_except_one(g->V[u], g->D[u], g->V[md], g->D[md], md))
     {
-        *offset = 0;
         d->u = u;
         d->v = md;
 
-        g->W[md] -= g->W[u];
+        graph_change_vertex_weight(g, md, g->W[md] - g->W[u]);
         graph_remove_edge(g, u, md);
 
         reduction_data_queue_distance_one(g, u, c);
@@ -44,11 +45,10 @@ int extended_domination_reduce_graph(graph *g, node_id u, node_weight *offset,
         if (v != u && g->W[v] > g->W[u] && g->D[v] >= g->D[u] && graph_is_neighbor(g, u, v) &&
             set_is_subset_except_one(g->V[u], g->D[u], g->V[v], g->D[v], v))
         {
-            *offset = 0;
             d->u = u;
             d->v = v;
 
-            g->W[v] -= g->W[u];
+            graph_change_vertex_weight(g, v, g->W[v] - g->W[u]);
             graph_remove_edge(g, u, v);
 
             reduction_data_queue_distance_one(g, u, c);
@@ -63,8 +63,7 @@ int extended_domination_reduce_graph(graph *g, node_id u, node_weight *offset,
 
 void extended_domination_restore_graph(graph *g, reconstruction_data *d)
 {
-    g->W[d->v] += g->W[d->u];
-    graph_insert_edge(g, d->u, d->v);
+    graph_undo_changes(g, d->n);
 }
 
 void extended_domination_reconstruct_solution(int *I, reconstruction_data *d)

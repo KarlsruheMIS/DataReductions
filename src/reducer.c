@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#define STRUCTION_RULES 2
+
 reducer *reducer_init(graph *g, int n_rules, ...)
 {
     va_list args;
@@ -17,11 +19,11 @@ reducer *reducer_init(graph *g, int n_rules, ...)
 
     r->Rule = malloc(sizeof(reduction) * r->n_rules);
 
-    r->Queue_count = malloc(sizeof(node_id) * r->n_rules);
-    r->Queues = malloc(sizeof(node_id *) * r->n_rules);
-    r->In_queues = malloc(sizeof(int *) * r->n_rules);
+    r->Queue_count = malloc(sizeof(node_id) * (r->n_rules + STRUCTION_RULES));
+    r->Queues = malloc(sizeof(node_id *) * (r->n_rules + STRUCTION_RULES));
+    r->In_queues = malloc(sizeof(int *) * (r->n_rules + STRUCTION_RULES));
 
-    for (int i = 0; i < r->n_rules; i++)
+    for (int i = 0; i < r->n_rules + STRUCTION_RULES; i++)
     {
         r->Queue_count[i] = g->n;
         r->Queues[i] = malloc(sizeof(node_id) * r->_a);
@@ -37,7 +39,10 @@ reducer *reducer_init(graph *g, int n_rules, ...)
         {
             r->In_queues[i][j] = 0;
         }
+    }
 
+    for (int i = 0; i < r->n_rules; i++)
+    {
         r->Rule[i] = va_arg(args, reduction);
     }
 
@@ -54,7 +59,7 @@ void reducer_increase(reducer *r)
 {
     r->_a *= 2;
 
-    for (int i = 0; i < r->n_rules; i++)
+    for (int i = 0; i < r->n_rules + STRUCTION_RULES; i++)
     {
         r->Queues[i] = realloc(r->Queues[i], sizeof(node_id) * r->_a);
         r->In_queues[i] = realloc(r->In_queues[i], sizeof(int) * r->_a);
@@ -72,7 +77,7 @@ void reducer_free(reducer *r)
 {
     free(r->Queue_count);
 
-    for (int i = 0; i < r->n_rules; i++)
+    for (int i = 0; i < r->n_rules + STRUCTION_RULES; i++)
     {
         free(r->Queues[i]);
         free(r->In_queues[i]);
@@ -134,7 +139,7 @@ void reducer_queue_changed(graph *g, reducer *r)
         if (!g->A[v])
             continue;
 
-        for (int j = 0; j < r->n_rules; j++)
+        for (int j = 0; j < r->n_rules + STRUCTION_RULES; j++)
         {
             if (!r->In_queues[j][v])
             {
@@ -227,6 +232,68 @@ void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l, double tl)
     }
 }
 
+void reducer_struction_fast(reducer *r, graph *g, reduction_log *l, double tl)
+{
+    // reducer_queue_all(r, g);
+
+    int rule = r->n_rules;
+    int verbose = r->verbose;
+    r->verbose = 0;
+    double t0 = get_wtime();
+    reducer_reduce_continue(r, g, l, tl);
+    while (rule < r->n_rules + STRUCTION_RULES && get_wtime() - t0 < tl)
+    {
+        if (r->Queue_count[rule] == 0)
+        {
+            rule++;
+            continue;
+        }
+        node_id u = r->Queues[rule][--r->Queue_count[rule]];
+        r->In_queues[rule][u] = 0;
+
+        if (!g->A[u])
+            continue;
+
+        long long n = g->nr, m = g->m, t = l->n,
+                  r0 = r->Queue_count[r->n_rules], r1 = r->Queue_count[r->n_rules + 1];
+
+        int res = reducer_apply_reduction(g, u, extended_struction, r, l);
+
+        if (res)
+        {
+            reducer_reduce_continue(r, g, l, tl - (get_wtime() - t0));
+            if (g->nr > n || (rule == r->n_rules && g->m > m))
+            {
+                reducer_restore_graph(g, l, t);
+                res = 0;
+
+                while (r->Queue_count[r->n_rules] > r0)
+                {
+                    node_id v = r->Queues[r->n_rules][--r->Queue_count[r->n_rules]];
+                    r->In_queues[r->n_rules][v] = 0;
+                }
+                while (r->Queue_count[r->n_rules + 1] > r1)
+                {
+                    node_id v = r->Queues[r->n_rules + 1][--r->Queue_count[r->n_rules + 1]];
+                    r->In_queues[r->n_rules + 1][v] = 0;
+                }
+            }
+            if (res && verbose)
+            {
+                printf("\r%10lld %10lld %10d %10d %10.3lf", g->nr, g->m, rule, r->Queue_count[r->n_rules], get_wtime() - t0);
+                fflush(stdout);
+            }
+            if (res)
+                rule = r->n_rules;
+        }
+    }
+    if (verbose)
+    {
+        printf("\r%10lld %10lld %10d\n", g->nr, g->m, rule);
+    }
+    r->verbose = verbose;
+}
+
 void reducer_struction(reducer *r, graph *g, reduction_log *l, int limit_m, double tl)
 {
     // srand(time(NULL));
@@ -235,21 +302,29 @@ void reducer_struction(reducer *r, graph *g, reduction_log *l, int limit_m, doub
     r->verbose = 0;
 
     double t0 = get_wtime(), t1 = get_wtime(), t2 = get_wtime();
+    node_id max_d = 3;
+
     while (g->nr > 0 && t1 - t0 < tl && t1 - t2 < 1.0)
     {
+        if (t1 - t2 > 0.5 && max_d < 16)
+        {
+            max_d++;
+            t2 = get_wtime();
+        }
+
         node_id u = rand() % g->n, _t = 0;
-        while (!g->A[u] && _t++ < 1000)
+        while ((!g->A[u] || g->D[u] > max_d) && _t++ < 1000)
         {
             u = rand() % g->n;
         }
 
-        if (!g->A[u])
+        if (!g->A[u] || g->D[u] > max_d)
         {
             t1 = get_wtime();
             continue;
         }
 
-        long long n = g->nr, m = g->m, t = l->n;
+        long long n = g->nr, m = g->m, t = l->n, tg = g->l;
 
         int res = reducer_apply_reduction(g, u, extended_struction, r, l);
 
@@ -276,29 +351,113 @@ void reducer_struction(reducer *r, graph *g, reduction_log *l, int limit_m, doub
         reducer_reduce_continue(r, g, l, tl - (t1 - t0));
 
         if (g->nr > n || (limit_m && g->m > m)) // || g->m > m
+        {
             reducer_restore_graph(g, l, t);
+        }
         else
         {
             t2 = get_wtime();
             if (verbose)
             {
-                printf("\r%10lld %10lld %10.2lf", g->nr, g->m, t1 - t0);
+                printf("\r%10lld %10lld %10.2lf %3d", g->nr, g->m, t1 - t0, max_d);
                 fflush(stdout);
             }
         }
         t1 = get_wtime();
     }
     if (verbose)
-        printf("\r%10lld %10lld\n", g->nr, g->m);
+        printf("\r%10lld %10lld %10.2lf\n", g->nr, g->m, t1 - t0);
     r->verbose = verbose;
 }
 
-void reducer_include_vertex(reducer *r, graph *g, reduction_log *l, node_id u)
+int include_vertex_reduce_graph(graph *g, node_id u, node_weight *offset,
+                                buffers *b, change_list *c, reconstruction_data *d)
+{
+    assert(g->A[u]);
+
+    *offset = g->W[u];
+    d->u = u;
+    d->n = g->l;
+
+    graph_deactivate_neighborhood(g, u);
+
+    reduction_data_queue_distance_two(g, u, c);
+
+    return 1;
+}
+
+void include_vertex_restore_graph(graph *g, reconstruction_data *d)
+{
+    assert(!g->A[d->u]);
+
+    graph_undo_changes(g, d->n);
+}
+
+void include_vertex_reconstruct_solution(int *I, reconstruction_data *d)
+{
+    I[d->u] = 1;
+}
+
+void include_vertex_clean(reconstruction_data *d)
 {
 }
 
+static reduction include_vertex = {
+    .reduce = include_vertex_reduce_graph,
+    .restore = include_vertex_restore_graph,
+    .reconstruct = include_vertex_reconstruct_solution,
+    .clean = include_vertex_clean,
+    .global = 0,
+};
+
+void reducer_include_vertex(reducer *r, graph *g, reduction_log *l, node_id u)
+{
+    reducer_apply_reduction(g, u, include_vertex, r, l);
+}
+
+int exclude_vertex_reduce_graph(graph *g, node_id u, node_weight *offset,
+                                buffers *b, change_list *c, reconstruction_data *d)
+{
+    assert(g->A[u]);
+
+    *offset = 0;
+    d->u = u;
+    d->n = g->l;
+
+    graph_deactivate_vertex(g, u);
+
+    reduction_data_queue_distance_one(g, u, c);
+
+    return 1;
+}
+
+void exclude_vertex_restore_graph(graph *g, reconstruction_data *d)
+{
+    assert(!g->A[d->u]);
+
+    graph_undo_changes(g, d->n);
+}
+
+void exclude_vertex_reconstruct_solution(int *I, reconstruction_data *d)
+{
+    I[d->u] = 0;
+}
+
+void exclude_vertex_clean(reconstruction_data *d)
+{
+}
+
+static reduction exclude_vertex = {
+    .reduce = exclude_vertex_reduce_graph,
+    .restore = exclude_vertex_restore_graph,
+    .reconstruct = exclude_vertex_reconstruct_solution,
+    .clean = exclude_vertex_clean,
+    .global = 0,
+};
+
 void reducer_exclude_vertex(reducer *r, graph *g, reduction_log *l, node_id u)
 {
+    reducer_apply_reduction(g, u, exclude_vertex, r, l);
 }
 
 void reducer_restore_graph(graph *g, reduction_log *l, long long t)

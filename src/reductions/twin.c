@@ -26,13 +26,15 @@ int twin_reduce_graph(graph *g, node_id u, node_weight *offset,
 
         if (v != u && set_is_equal(g->V[u], g->D[u], g->V[v], g->D[v]))
         {
-            graph_deactivate_vertex(g, v);
-
             d->u = u;
             d->v = v;
+            d->n = g->l;
 
             *offset = 0;
-            g->W[u] += g->W[v];
+
+            graph_deactivate_vertex(g, v);
+
+            graph_change_vertex_weight(g, u, g->W[u] + g->W[v]);
 
             reduction_data_queue_distance_one(g, u, c);
 
@@ -47,8 +49,7 @@ void twin_restore_graph(graph *g, reconstruction_data *d)
 {
     assert(g->A[d->u] && !g->A[d->v]);
 
-    graph_activate_vertex(g, d->v);
-    g->W[d->u] -= g->W[d->v];
+    graph_undo_changes(g, d->n);
 }
 
 void twin_reconstruct_solution(int *I, reconstruction_data *d)

@@ -44,7 +44,7 @@ int unconfined_reduce_graph(graph *g, node_id u, node_weight *offset,
         if (first && g->W[v] < g->W[u]) // Not a child
             continue;
 
-        for (node_id i = 0; i < g->D[v]; i++)
+        for (node_id i = 0; i < g->D[v] && g->W[v] >= sw; i++)
         {
             node_id w = g->V[v][i];
 
@@ -88,6 +88,8 @@ int unconfined_reduce_graph(graph *g, node_id u, node_weight *offset,
     {
         *offset = 0;
         d->u = u;
+        d->n = g->l;
+
         graph_deactivate_vertex(g, u);
 
         reduction_data_queue_distance_one(g, u, c);
@@ -101,7 +103,7 @@ void unconfined_restore_graph(graph *g, reconstruction_data *d)
 {
     assert(!g->A[d->u]);
 
-    graph_activate_vertex(g, d->u);
+    graph_undo_changes(g, d->n);
 }
 
 void unconfined_reconstruct_solution(int *I, reconstruction_data *d)

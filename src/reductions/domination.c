@@ -48,10 +48,12 @@ int domination_reduce_graph(graph *g, node_id u, node_weight *offset,
     if (md < 0 || g->D[md] > MAX_DOMINATION)
         return 0;
 
+    *offset = 0;
+    d->n = g->l;
+
     if (g->W[md] <= g->W[u] && g->D[md] >= g->D[u] &&
         set_is_subset_except_one(g->V[u], g->D[u], g->V[md], g->D[md], md))
     {
-        *offset = 0;
         d->u = md;
         graph_deactivate_vertex(g, md);
 
@@ -67,7 +69,6 @@ int domination_reduce_graph(graph *g, node_id u, node_weight *offset,
         if (v != u && g->W[v] <= g->W[u] && g->D[v] >= g->D[u] && graph_is_neighbor(g, u, v) &&
             set_is_subset_except_one(g->V[u], g->D[u], g->V[v], g->D[v], v))
         {
-            *offset = 0;
             d->u = v;
             graph_deactivate_vertex(g, v);
 
@@ -84,7 +85,7 @@ void domination_restore_graph(graph *g, reconstruction_data *d)
 {
     assert(!g->A[d->u]);
 
-    graph_activate_vertex(g, d->u);
+    graph_undo_changes(g, d->n);
 }
 
 void domination_reconstruct_solution(int *I, reconstruction_data *d)

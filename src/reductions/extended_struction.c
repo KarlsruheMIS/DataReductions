@@ -18,10 +18,10 @@ extended_struction_data *extended_struction_init()
     es->n = 0;
     es->m = 0;
 
-    es->V = malloc(sizeof(node_id) * (MAX_STRUCTION + 1));
-    es->E = malloc(sizeof(node_id) * MAX_STRUCTION * MAX_STRUCTION);
-    es->ID = malloc(sizeof(node_id) * MAX_STRUCTION);
-    es->W = malloc(sizeof(node_weight) * MAX_STRUCTION);
+    es->V = malloc(sizeof(node_id) * (MAX_STRUCTION_NODES + 1));
+    es->E = malloc(sizeof(node_id) * MAX_STRUCTION_NODES * MAX_STRUCTION_NODES);
+    es->ID = malloc(sizeof(node_id) * MAX_STRUCTION_NODES);
+    es->W = malloc(sizeof(node_weight) * MAX_STRUCTION_NODES);
 
     es->V[0] = 0;
 
@@ -40,10 +40,10 @@ void extended_struction_free(extended_struction_data *es)
 
 void extended_struction_enumerate_independent_sets(graph *g, node_id u, extended_struction_data *es, buffers *b)
 {
-    int *Branch = malloc(sizeof(int) * MAX_STRUCTION);
-    int *IS = malloc(sizeof(int) * MAX_STRUCTION);
+    int *Branch = malloc(sizeof(int) * MAX_STRUCTION_NODES);
+    int *IS = malloc(sizeof(int) * MAX_STRUCTION_NODES);
 
-    for (int i = 0; i < MAX_STRUCTION; i++)
+    for (int i = 0; i < MAX_STRUCTION_NODES; i++)
         Branch[i] = 0;
 
     node_weight W = 0;
@@ -52,7 +52,7 @@ void extended_struction_enumerate_independent_sets(graph *g, node_id u, extended
     int t = b->t;
 
     int p = 0, n = 0;
-    while (p >= 0 && es->n < MAX_STRUCTION)
+    while (p >= 0 && es->n < MAX_STRUCTION_NODES)
     {
         // Scan forward for next to add
         while (p < g->D[u])
@@ -121,7 +121,7 @@ int extended_struction_reduce_graph(graph *g, node_id u, node_weight *offset,
 {
     assert(g->A[u]);
 
-    if (g->D[u] > MAX_STRUCTION)
+    if (g->D[u] > MAX_STRUCTION_DEGREE)
         return 0;
 
     extended_struction_data *es = extended_struction_init();
@@ -129,10 +129,12 @@ int extended_struction_reduce_graph(graph *g, node_id u, node_weight *offset,
     extended_struction_enumerate_independent_sets(g, u, es, b);
 
     // Reduce graph
-    if (es->n < MAX_STRUCTION)
+    if (es->n < MAX_STRUCTION_NODES)
     {
-        graph_deactivate_neighborhood(g, u);
         *offset = g->W[u];
+        d->n = g->l;
+
+        graph_deactivate_neighborhood(g, u);
 
         for (node_id i = 0; i < es->n; i++)
         {
@@ -145,8 +147,8 @@ int extended_struction_reduce_graph(graph *g, node_id u, node_weight *offset,
                 for (node_id k = 0; k < g->D[v]; k++)
                 {
                     node_id w = g->V[v][k];
-                    if (g->A[w] && !graph_is_neighbor(g, g->n - 1, w))
-                        graph_insert_edge(g, g->n - 1, w);
+                    if (g->A[w])
+                        graph_add_edge(g, g->n - 1, w);
                 }
             }
         }
@@ -162,7 +164,7 @@ int extended_struction_reduce_graph(graph *g, node_id u, node_weight *offset,
         {
             for (node_id j = i + 1; j < es->n; j++)
             {
-                graph_insert_edge(g, es->ID[i], es->ID[j]);
+                graph_add_edge(g, es->ID[i], es->ID[j]);
             }
         }
 
@@ -183,13 +185,7 @@ int extended_struction_reduce_graph(graph *g, node_id u, node_weight *offset,
 
 void extended_struction_restore_graph(graph *g, reconstruction_data *d)
 {
-    extended_struction_data *es = (extended_struction_data *)d->data;
-    for (node_id i = es->n - 1; i >= 0; i--)
-    {
-        graph_deactivate_vertex(g, es->ID[i]);
-        graph_remove_last_added_vertex(g);
-    }
-    graph_activate_neighborhood(g, d->u);
+    graph_undo_changes(g, d->n);
 }
 
 void extended_struction_reconstruct_solution(int *I, reconstruction_data *d)
