@@ -241,7 +241,7 @@ void reducer_struction_fast(reducer *r, graph *g, reduction_log *l, double tl)
     r->verbose = 0;
     double t0 = get_wtime();
     reducer_reduce_continue(r, g, l, tl);
-    while (rule < r->n_rules + STRUCTION_RULES && get_wtime() - t0 < tl)
+    while (rule < r->n_rules + 1 && get_wtime() - t0 < tl)
     {
         if (r->Queue_count[rule] == 0)
         {
