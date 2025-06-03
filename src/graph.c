@@ -310,10 +310,10 @@ void graph_deactivate_neighborhood(graph *g, node_id u)
     for (node_id i = 0; i < g->D[u]; i++)
     {
         node_id v = g->V[u][i];
+        rm += g->D[v];
         for (node_id j = 0; j < g->D[v]; j++)
         {
             node_id w = g->V[v][j];
-            rm++;
             if (!g->A[w])
                 continue;
             graph_remove_endpoint(g, w, v, 0);
@@ -333,10 +333,10 @@ void graph_activate_neighborhood(graph *g, node_id u)
     for (node_id i = 0; i < g->D[u]; i++)
     {
         node_id v = g->V[u][i];
+        rm += g->D[v];
         for (node_id j = 0; j < g->D[v]; j++)
         {
             node_id w = g->V[v][j];
-            rm++;
             if (!g->A[w])
                 continue;
             graph_insert_endpoint(g, w, v, 0);

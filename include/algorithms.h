@@ -139,3 +139,37 @@ static inline int set_is_subset_except_two(const node_id *A, node_id a, const no
 
     return i == a;
 }
+
+// Computes A \ (B U {x}) and stores the result in C, returns the size of C
+static inline int set_minus_except_one(const node_id *A, node_id a, const node_id *B, node_id b, node_id *C, node_id x)
+{
+    node_id n = 0;
+    node_id i = 0, j = 0;
+    while (i < a && j < b)
+    {
+        if (A[i] == B[j])
+        {
+            i++;
+            j++;
+        }
+        else if (A[i] > B[j])
+        {
+            j++;
+        }
+        else
+        {
+            if (A[i] != x)
+                C[n++] = A[i];
+            i++;
+        }
+    }
+
+    while (i < a)
+    {
+        if (A[i] != x)
+            C[n++] = A[i];
+        i++;
+    }
+
+    return n;
+}

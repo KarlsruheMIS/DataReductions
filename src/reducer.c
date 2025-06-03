@@ -519,9 +519,9 @@ void reducer_reduce_step(reducer *r, graph *g, reduction_log *l)
 
 void reducer_queue_all(reducer *r, graph *g)
 {
-    for (int i = 0; i < r->n_rules; i++)
+    for (int i = 0; i < r->n_rules + STRUCTION_RULES; i++)
     {
-        r->Queue_count[i] = g->nr;
+        r->Queue_count[i] = 0;
 
         for (long long j = 0; j < g->n; j++)
         {
@@ -530,7 +530,7 @@ void reducer_queue_all(reducer *r, graph *g)
                 r->In_queues[i][j] = 0;
                 continue;
             }
-            r->Queues[i][j] = j;
+            r->Queues[i][r->Queue_count[i]++] = j;
             r->In_queues[i][j] = 1;
         }
         for (long long j = g->n; j < r->_a; j++)

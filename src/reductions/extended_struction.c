@@ -121,7 +121,7 @@ int extended_struction_reduce_graph(graph *g, node_id u, node_weight *offset,
 {
     assert(g->A[u]);
 
-    if (g->D[u] > MAX_STRUCTION_DEGREE)
+    if (g->D[u] > MAX_STRUCTION_DEGREE || g->D[u] < 3)
         return 0;
 
     extended_struction_data *es = extended_struction_init();
