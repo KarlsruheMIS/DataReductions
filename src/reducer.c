@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "reducer.h"
 
 #include "algorithms.h"
@@ -7,6 +8,15 @@
 #include <assert.h>
 
 #define STRUCTION_RULES 2
+
+static inline int compare_by_degree(const void *a, const void *b, void *gr)
+{
+    graph *g = (graph *)gr;
+    const int *deg = g->D;
+    node_id u = *(const node_id *)a;
+    node_id v = *(const node_id *)b;
+    return deg[v] - deg[u]; 
+}
 
 reducer *reducer_init(graph *g, int n_rules, ...)
 {
@@ -32,7 +42,7 @@ reducer *reducer_init(graph *g, int n_rules, ...)
         // Perhaps make filling the queues optional..
         for (long long j = 0; j < g->n; j++)
         {
-            r->Queues[i][j] = j;
+            // r->Queues[i][j] = j;
             r->In_queues[i][j] = 1;
         }
         for (long long j = g->n; j < r->_a; j++)
@@ -40,6 +50,15 @@ reducer *reducer_init(graph *g, int n_rules, ...)
             r->In_queues[i][j] = 0;
         }
     }
+    // fill queues initially sorted by degree
+    for (long long j = 0; j < g->n; j++)
+        r->Queues[0][j] = j;
+
+    qsort_r(r->Queues[0], g->n, sizeof(node_id), compare_by_degree, g);
+
+    for (int i = 1; i < r->n_rules + STRUCTION_RULES; i++)
+        for (long long j = 0; j < g->n; j++)
+            r->Queues[i][j] = r->Queues[0][j];
 
     for (int i = 0; i < r->n_rules; i++)
     {
