@@ -11,7 +11,7 @@ typedef struct
     node_weight *W;
 } extended_struction_data;
 
-extended_struction_data *extended_struction_init()
+extended_struction_data *extended_struction_init(node_id d)
 {
     extended_struction_data *es = malloc(sizeof(extended_struction_data));
 
@@ -19,7 +19,7 @@ extended_struction_data *extended_struction_init()
     es->m = 0;
 
     es->V = malloc(sizeof(node_id) * (MAX_STRUCTION_NODES + 1));
-    es->E = malloc(sizeof(node_id) * MAX_STRUCTION_NODES * MAX_STRUCTION_NODES);
+    es->E = malloc(sizeof(node_id) * MAX_STRUCTION_NODES * d);
     es->ID = malloc(sizeof(node_id) * MAX_STRUCTION_NODES);
     es->W = malloc(sizeof(node_weight) * MAX_STRUCTION_NODES);
 
@@ -40,10 +40,10 @@ void extended_struction_free(extended_struction_data *es)
 
 void extended_struction_enumerate_independent_sets(graph *g, node_id u, extended_struction_data *es, buffers *b)
 {
-    int *Branch = malloc(sizeof(int) * MAX_STRUCTION_NODES);
-    int *IS = malloc(sizeof(int) * MAX_STRUCTION_NODES);
+    int *Branch = malloc(sizeof(int) * g->D[u]);
+    int *IS = malloc(sizeof(int) * g->D[u]);
 
-    for (int i = 0; i < MAX_STRUCTION_NODES; i++)
+    for (int i = 0; i < g->D[u]; i++)
         Branch[i] = 0;
 
     node_weight W = 0;
@@ -124,7 +124,7 @@ int extended_struction_reduce_graph(graph *g, node_id u, node_weight *offset,
     if (g->D[u] > MAX_STRUCTION_DEGREE || g->D[u] < 3)
         return 0;
 
-    extended_struction_data *es = extended_struction_init();
+    extended_struction_data *es = extended_struction_init(g->D[u]);
 
     extended_struction_enumerate_independent_sets(g, u, es, b);
 
