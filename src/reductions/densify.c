@@ -16,13 +16,13 @@ int densify_reduce_graph(graph *g, node_id u, node_weight *offset,
 
     d->n = g->l;
 
+    int added_edges = 0;
     for (node_id i = 0; i < g->D[u]; i++)
     {
         node_id v = g->V[u][i];
 
         node_id n = set_minus_except_one(g->V[v], g->D[v], g->V[u], g->D[u], diff, u);
 
-        int added_edges = 0;
         for (node_id j = 0; j < n; j++)
         {
             node_id x = diff[j];
@@ -45,13 +45,13 @@ int densify_reduce_graph(graph *g, node_id u, node_weight *offset,
             }
         }
         b->t += n;
+    }
 
-        if (added_edges > 0)
-        {
-            // printf("Added %d edges\n", added_edges);
-            reduction_data_queue_distance_one(g, u, c);
-            return 1;
-        }
+    if (added_edges > 0)
+    {
+        // printf("Added %d edges\n", added_edges);
+        reduction_data_queue_distance_one(g, u, c);
+        return 1;
     }
 
     return 0;

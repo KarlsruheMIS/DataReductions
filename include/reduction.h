@@ -19,6 +19,7 @@ typedef struct
 
     // Buffers
     node_id **buffers;
+    node_weight **buffers_weigth;
 
     // Fast sets
     int t;

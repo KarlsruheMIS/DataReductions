@@ -3,6 +3,7 @@
 
 #include "algorithms.h"
 #include "extended_struction.h"
+#include "struction.h"
 
 #include <stdlib.h>
 #include <assert.h>
@@ -15,7 +16,7 @@ static inline int compare_by_degree(const void *a, const void *b, void *gr)
     const int *deg = g->D;
     node_id u = *(const node_id *)a;
     node_id v = *(const node_id *)b;
-    return deg[v] - deg[u]; 
+    return deg[v] - deg[u];
 }
 
 reducer *reducer_init(graph *g, int n_rules, ...)
@@ -260,7 +261,7 @@ void reducer_struction_fast(reducer *r, graph *g, reduction_log *l, double tl)
     r->verbose = 0;
     double t0 = get_wtime();
     reducer_reduce_continue(r, g, l, tl);
-    while (rule < r->n_rules + 1 && get_wtime() - t0 < tl)
+    while (rule < r->n_rules + STRUCTION_RULES && get_wtime() - t0 < tl)
     {
         if (r->Queue_count[rule] == 0)
         {
@@ -276,10 +277,11 @@ void reducer_struction_fast(reducer *r, graph *g, reduction_log *l, double tl)
         long long n = g->nr, m = g->m, t = l->n,
                   r0 = r->Queue_count[r->n_rules], r1 = r->Queue_count[r->n_rules + 1];
 
-        int res = reducer_apply_reduction(g, u, extended_struction, r, l);
+        int res = reducer_apply_reduction(g, u, struction, r, l);
 
         if (res)
         {
+            long long bn = g->nr, bm = g->m;
             reducer_reduce_continue(r, g, l, tl - (get_wtime() - t0));
             if (g->nr > n || (rule == r->n_rules && g->m > m))
             {

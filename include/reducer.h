@@ -38,6 +38,8 @@ void reducer_free(reducer *r);
 
 void reducer_free_reduction_log(reduction_log *l);
 
+int reducer_apply_reduction(graph *g, node_id u, reduction rule, reducer *r, reduction_log *l);
+
 reduction_log *reducer_reduce(reducer *r, graph *g, double tl);
 
 void reducer_reduce_continue(reducer *r, graph *g, reduction_log *l, double tl);

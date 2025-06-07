@@ -17,6 +17,7 @@
 #include "weighted_funnel.h"
 #include "critical_set.h"
 #include "densify.h"
+#include "struction.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -115,8 +116,8 @@ void *mwis_reduction_run_struction(graph *g, double tl)
                               neighborhood_removal,
                               triangle,
                               v_shape,
-                              domination,
                               twin,
+                              domination,
                               simplicial_vertex_with_weight_transfer,
                               weighted_funnel,
                               unconfined,
@@ -126,7 +127,25 @@ void *mwis_reduction_run_struction(graph *g, double tl)
     double t1 = get_wtime();
     double elapsed = t1 - t0;
 
-    reducer_struction_fast(r, g, l, tl - elapsed);
+    STRUCTION_MAX_DEGREE = 8;
+    STRUCTION_MAX_NODES = 16;
+    reducer_struction_fast(r, g, l, tl - (get_wtime() - t0));
+
+    reducer_queue_all(r, g);
+    STRUCTION_MAX_DEGREE = 8;
+    STRUCTION_MAX_NODES = 25;
+    reducer_struction_fast(r, g, l, tl - (get_wtime() - t0));
+
+    reducer_queue_all(r, g);
+    STRUCTION_MAX_DEGREE = 16;
+    STRUCTION_MAX_NODES = 36;
+    reducer_struction_fast(r, g, l, tl - (get_wtime() - t0));
+
+    reducer_queue_all(r, g);
+    STRUCTION_MAX_DEGREE = 16;
+    STRUCTION_MAX_NODES = 49;
+    reducer_struction_fast(r, g, l, tl - (get_wtime() - t0));
+
     reducer_free(r);
 
     return (void *)build_reduced_graph(g, l, orginal_size);

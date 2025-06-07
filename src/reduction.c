@@ -9,11 +9,13 @@ void reduction_data_init(graph *g, buffers **b, change_list **c)
     (*b)->t = 1;
     (*b)->_a = g->_a;
     (*b)->buffers = malloc(sizeof(node_id *) * N_BUFFERS);
+    (*b)->buffers_weigth = malloc(sizeof(node_weight *) * N_BUFFERS);
     (*b)->fast_sets = malloc(sizeof(int *) * N_BUFFERS);
 
     for (int i = 0; i < N_BUFFERS; i++)
     {
         (*b)->buffers[i] = malloc(sizeof(node_id) * (*b)->_a);
+        (*b)->buffers_weigth[i] = malloc(sizeof(node_weight) * (*b)->_a);
         (*b)->fast_sets[i] = malloc(sizeof(int) * (*b)->_a);
 
         for (long long j = 0; j < (*b)->_a; j++)
@@ -41,6 +43,7 @@ void reduction_data_increase(buffers *b, change_list *c)
     for (int i = 0; i < N_BUFFERS; i++)
     {
         b->buffers[i] = realloc(b->buffers[i], sizeof(node_id) * b->_a);
+        b->buffers_weigth[i] = realloc(b->buffers_weigth[i], sizeof(node_weight) * b->_a);
         b->fast_sets[i] = realloc(b->fast_sets[i], sizeof(int) * b->_a);
 
         for (long long j = 0; j < b->_a; j++)
@@ -63,6 +66,7 @@ void reduction_data_free(buffers *b, change_list *c)
     for (int i = 0; i < N_BUFFERS; i++)
     {
         free(b->buffers[i]);
+        free(b->buffers_weigth[i]);
         free(b->fast_sets[i]);
     }
     free(b->buffers);
