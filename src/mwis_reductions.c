@@ -146,6 +146,11 @@ void *mwis_reduction_run_struction(graph *g, double tl)
     STRUCTION_MAX_NODES = 49;
     reducer_struction_fast(r, g, l, tl - (get_wtime() - t0));
 
+    reducer_queue_all(r, g);
+    STRUCTION_MAX_DEGREE = 16;
+    STRUCTION_MAX_NODES = 64;
+    reducer_struction_fast(r, g, l, tl - (get_wtime() - t0));
+
     reducer_free(r);
 
     return (void *)build_reduced_graph(g, l, orginal_size);
