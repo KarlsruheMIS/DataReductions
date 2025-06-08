@@ -151,6 +151,15 @@ void *mwis_reduction_run_struction(graph *g, double tl)
     return (void *)build_reduced_graph(g, l, orginal_size);
 }
 
+void mwis_reduction_dinsify(graph *g, void *rd, double tl)
+{
+    reducer *r = reducer_init(g, 1, densify);
+
+    reducer_reduce_continue(r, g, ((reduction_data *)rd)->rl, tl);
+
+    reducer_free(r);
+}
+
 int *mwis_reduction_lift_solution(int *rI, void *rd)
 {
     reduction_data *d = (reduction_data *)rd;

@@ -47,6 +47,8 @@ void *mwis_reduction_reduce_graph(graph *g, double tl);
 
 void *mwis_reduction_run_struction(graph *g, double tl);
 
+void mwis_reduction_dinsify(graph *g, void *reduction_data, double tl);
+
 int *mwis_reduction_lift_solution(int *rI, void *reduction_data);
 
 void mwis_reduction_restore_graph(graph *rg, void *reduction_data);
