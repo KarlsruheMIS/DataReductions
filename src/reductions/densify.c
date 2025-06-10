@@ -9,6 +9,9 @@ int densify_reduce_graph(graph *g, node_id u, node_weight *offset,
 {
     assert(g->A[u]);
 
+    if (g->D[u] > 128)
+        return 0;
+
     node_id n = 0;
     node_id *diff = b->buffers[0];
 
@@ -20,6 +23,8 @@ int densify_reduce_graph(graph *g, node_id u, node_weight *offset,
     for (node_id i = 0; i < g->D[u]; i++)
     {
         node_id v = g->V[u][i];
+        if (g->W[v] < g->W[u])
+            continue;
 
         node_id n = set_minus_except_one(g->V[v], g->D[v], g->V[u], g->D[u], diff, u);
 

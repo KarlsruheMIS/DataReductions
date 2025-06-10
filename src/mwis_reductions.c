@@ -158,7 +158,7 @@ void *mwis_reduction_run_struction(graph *g, double tl)
 
 void mwis_reduction_dinsify(graph *g, void *rd, double tl)
 {
-    reducer *r = reducer_init(g, 1, densify);
+    reducer *r = reducer_init(g, 2, domination, densify);
 
     reducer_reduce_continue(r, g, ((reduction_data *)rd)->rl, tl);
 
