@@ -1,308 +1,288 @@
 #include "critical_set.h"
 #include "algorithms.h"
 
-#include <assert.h>
-#include <stdlib.h>
 #include <limits.h>
+#include <memory.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
-node_weight tide_cycle(node_id n, node_id *E, node_id *ES, node_id *EL, node_id m,
-                       node_id *R, node_weight *C, node_weight *P, node_weight *H, node_weight *L)
-{
-    assert(sizeof(node_weight) == sizeof(long long));
+// For clarity
+typedef node_id edge_id;
+typedef node_weight edge_weight;
+typedef node_weight flow_t;
 
-    for (node_id i = 0; i < n; i++)
-        H[i] = 0;
-    H[0] = LLONG_MAX;
+#define INFINITE_FLOW LLONG_MAX
 
-    for (node_id i = 0; i < m; i++)
-    {
-        node_id e = EL[i];
-        node_id u = ES[i], v = E[e];
-        P[i] = (C[e] < H[u]) ? C[e] : H[u];
-        H[v] += P[i];
-    }
+typedef struct {
+    // Number of vertices in the flow graph.
+    node_id n;
+    // Source and sink indices in the flow graph.
+    node_id source, sink;
+    // Number of edges in the flow graph.
+    edge_id m;
+    // For edge e = (u,v), heads[e] == v.
+    node_id *heads;
+    // For edge e = (u,v), rev_idxs[e] = (v,u).
+    edge_id *rev_idxs;
+    // Stores the residual capacity for each edge.
+    flow_t *residuals;
+    // For vertex v, its outgoing edges are [edge_idxs[v], edge_idxs[v+1]).
+    edge_id *edge_idxs;
 
-    if (H[n - 1] == 0)
-        return 0;
+    // Used to store in-progress edge indices in a few places.
+    edge_id *progress;
+    // Vertex queue used for BFS.
+    node_id *queue;
+    node_id q_start, q_end;
+    // A distance map used in the dinitz BFS and DFS.
+    node_id *ranks;
+} dinitz_fg;
 
-    for (node_id i = 0; i < n; i++)
-        L[i] = 0;
-    L[n - 1] = H[n - 1];
+typedef struct {
+    // For the i-th active node with index j, forward[j] == i.
+    node_id *forward;
+    // For the i-th active node with index j, reverse[i] == j.
+    node_id *reverse;
+    // Total number of nodes. equal to the length of forward.
+    node_id total;
+    // Active number of nodes. equal to the length of reverse.
+    node_id active;
+} node_map;
 
-    for (node_id i = m - 1; i >= 0; i--)
-    {
-        node_id e = EL[i];
-        node_id u = ES[i], v = E[e];
+static void add_edges(dinitz_fg *fg, node_id *progress, node_id u, node_id v,
+                      flow_t f) {
+    edge_id e = progress[u]++, e_r = progress[v]++;
 
-        node_weight c = H[u] - L[u];
-        P[i] = (c < P[i]) ? c : P[i];
-        P[i] = (L[v] < P[i]) ? L[v] : P[i];
+    fg->heads[e] = v;
+    fg->heads[e_r] = u;
 
-        L[v] -= P[i];
-        L[u] += P[i];
-    }
+    fg->residuals[e] = f;
+    fg->residuals[e_r] = 0;
 
-    for (node_id i = 0; i < n; i++)
-        H[i] = 0;
-    H[0] = L[0];
-
-    for (node_id i = 0; i < m; i++)
-    {
-        node_id e = EL[i];
-        node_id u = ES[i], v = E[e];
-
-        P[i] = (H[u] < P[i]) ? H[u] : P[i];
-        H[u] -= P[i];
-        H[v] += P[i];
-        C[e] -= P[i];
-        C[R[e]] += P[i];
-    }
-
-    return H[n - 1];
+    fg->rev_idxs[e] = e_r;
+    fg->rev_idxs[e_r] = e;
 }
 
-void bfs(node_id n, node_id *V, node_id *E, node_weight *C, node_id *D,
-         node_id *R, node_id *W, node_id *ES, node_id *EL, node_id *m)
-{
-    for (node_id i = 0; i < n; i++)
-        D[i] = -1;
+static void build_fg(dinitz_fg *fg, const node_map *nm, const graph *g) {
+    fg->n = nm->active * 2 + 2;
+    fg->edge_idxs = calloc(fg->n + 1, sizeof(edge_id));
+    fg->progress = malloc(fg->n * sizeof(edge_id));
+    fg->queue = malloc(fg->n * sizeof(edge_id));
+    fg->ranks = malloc(fg->n * sizeof(edge_id));
 
-    node_id r = 1, w = 0;
-    R[0] = 0;
-    D[0] = 0;
+    edge_id *counters = &fg->edge_idxs[1];
+    fg->source = fg->n - 2;
+    fg->sink = fg->n - 1;
+    for (node_id u = 0; u < nm->active; u++) {
+        node_id u_orig = nm->reverse[u];
+        counters[fg->source]++;
+        counters[u]++;
 
-    *m = 0;
+        counters[fg->sink]++;
+        counters[u + nm->active]++;
 
-    while (r > 0 && D[n - 1] < 0)
-    {
-        w = 0;
-        for (node_id i = 0; i < r; i++)
-        {
-            node_id u = R[i];
-            for (node_id j = V[u]; j < V[u + 1]; j++)
-            {
-                if (C[j] == 0)
-                    continue;
-
-                node_id v = E[j];
-                if (D[v] < 0)
-                {
-                    W[w++] = v;
-                    D[v] = D[u] + 1;
-                }
-                if (D[v] == D[u] + 1)
-                {
-                    ES[*m] = u;
-                    EL[*m] = j;
-                    (*m)++;
-                }
+        for (edge_id e = 0; e < g->D[u_orig]; e++) {
+            node_id v_orig = g->V[u_orig][e];
+            if (g->A[v_orig]) {
+                counters[u]++;
+                counters[nm->forward[v_orig] + nm->active]++;
             }
         }
-        r = w;
-        node_id *tmp = R;
-        R = W;
-        W = tmp;
     }
+
+    for (node_id i = 1; i <= fg->n; i++) {
+        fg->edge_idxs[i] += fg->edge_idxs[i - 1];
+    }
+
+    fg->m = fg->edge_idxs[fg->n];
+    fg->heads = malloc(fg->m * sizeof(node_id));
+    fg->rev_idxs = malloc(fg->m * sizeof(edge_id));
+    fg->residuals = malloc(fg->m * sizeof(flow_t));
+
+    memcpy(fg->progress, fg->edge_idxs, fg->n * sizeof(edge_id));
+
+    for (node_id u = 0; u < nm->active; u++) {
+        node_id u_orig = nm->reverse[u];
+        flow_t weight = g->W[u_orig];
+
+        add_edges(fg, fg->progress, fg->source, u, weight);
+        add_edges(fg, fg->progress, u + nm->active, fg->sink, weight);
+
+        for (edge_id e = 0; e < g->D[u_orig]; e++) {
+            node_id v_orig = g->V[u_orig][e];
+            if (g->A[v_orig]) {
+                add_edges(fg, fg->progress, u, nm->forward[v_orig] + nm->active,
+                          weight);
+            }
+        }
+    }
+}
+
+static void free_fg(dinitz_fg *fg) {
+    free(fg->heads);
+    free(fg->rev_idxs);
+    free(fg->residuals);
+    free(fg->edge_idxs);
+    free(fg->progress);
+    free(fg->queue);
+    free(fg->ranks);
+}
+
+static bool compute_ranks(dinitz_fg *fg) {
+    memset(fg->ranks, 0, sizeof(node_id) * fg->n);
+    fg->q_start = 0;
+    fg->q_end = 1;
+    fg->queue[0] = fg->source;
+    fg->ranks[fg->source] = 1;
+
+    while (fg->q_start != fg->q_end) {
+        node_id x = fg->queue[fg->q_start++];
+        if (x == fg->sink)
+            return true;
+
+        for (edge_id e = fg->edge_idxs[x]; e < fg->edge_idxs[x + 1]; e++) {
+            node_id y = fg->heads[e];
+            if (fg->residuals[e] > 0 && fg->ranks[y] == 0) {
+                fg->ranks[y] = fg->ranks[x] + 1;
+                fg->queue[fg->q_end++] = y;
+            }
+        }
+    }
+
+    return false;
+}
+
+static flow_t augment(dinitz_fg *fg, node_id x, flow_t flow) {
+    if (x == fg->sink) {
+        return flow;
+    }
+
+    while (fg->progress[x] != fg->edge_idxs[x + 1]) {
+        edge_id e = fg->progress[x];
+        node_id y = fg->heads[e];
+
+        if (fg->residuals[e] > 0 && fg->ranks[y] == fg->ranks[x] + 1) {
+            flow_t eps = augment(
+                fg, y, fg->residuals[e] < flow ? fg->residuals[e] : flow);
+            if (eps > 0) {
+                fg->residuals[e] -= eps;
+                fg->residuals[fg->rev_idxs[e]] += eps;
+                return eps;
+            }
+        }
+
+        fg->progress[x]++;
+    }
+
+    return 0;
+}
+
+static flow_t solve_max_flow(dinitz_fg *fg) {
+    flow_t result = 0;
+
+    while (compute_ranks(fg)) {
+        memcpy(fg->progress, fg->edge_idxs, fg->n * sizeof(edge_id));
+        flow_t aug;
+        while ((aug = augment(fg, fg->source, INFINITE_FLOW)) != 0) {
+            result += aug;
+        }
+    }
+
+    return result;
+}
+
+// `red` should point to an array with enough capacity to hold all vertices
+// that should be reduced (e.g. just `g->n`). After the function returns,
+// `red[0..n_red]` will contain the critical set of the graph.
+static node_id nodes_to_reduce(const dinitz_fg *fg, const node_map *nm,
+                               const graph *g, node_id *red) {
+    // Dinitz calculated the ranks just before returning, thus the rank map is
+    // currently up to date. Therefore, a node in the residual graph is
+    // reachable iff it has a nonzero rank.
+    node_id n_red = 0;
+    for (node_id u = 0; u < nm->active; u++) {
+        if (fg->ranks[u]) {
+            red[n_red++] = nm->reverse[u];
+        }
+    }
+
+    return n_red;
+}
+
+void build_node_map(node_map *map, const graph *g) {
+    node_id num_active = 0;
+    for (node_id i = 0; i < g->n; i++) {
+        num_active += (g->A[i] != 0);
+    }
+
+    map->total = g->n;
+    map->active = num_active;
+    map->forward = malloc(g->n * sizeof(node_id));
+    map->reverse = malloc(num_active * sizeof(node_id));
+
+    node_id progress = 0;
+    for (node_id i = 0; i < g->n; i++) {
+        if (g->A[i]) {
+            map->forward[i] = progress;
+            map->reverse[progress] = i;
+            progress++;
+        }
+    }
+}
+
+static void free_node_map(node_map *nm) {
+    free(nm->forward);
+    free(nm->reverse);
 }
 
 int critical_set_reduce_graph(graph *g, node_id u, node_weight *offset,
-                              buffers *b, change_list *c, reconstruction_data *d)
-{
-    node_id *FM = malloc(sizeof(node_id) * g->n);
-    node_id *RM = malloc(sizeof(node_id) * (g->n + 1));
+                              buffers *b, change_list *c,
+                              reconstruction_data *d) {
+    node_map nm;
+    build_node_map(&nm, g);
+    dinitz_fg fg;
+    build_fg(&fg, &nm, g);
+    flow_t aug = solve_max_flow(&fg);
 
-    node_id n = 0, m = 0;
+    node_id *red = malloc(g->n * sizeof(node_id));
+    node_id n_red = nodes_to_reduce(&fg, &nm, g, red);
 
-    for (node_id u = 0; u < g->n; u++)
-    {
-        if (!g->A[u])
-            continue;
-
-        n++;
-        FM[u] = n;
-        RM[n] = u;
-
-        m += 4;
-        m += g->D[u] * 2;
-    }
-
-    node_id na = n;
-
-    if (na == 0)
-    {
-        free(FM);
-        free(RM);
-        return 0;
-    }
-
-    n = n * 2 + 2;
-
-    node_id *V = malloc(sizeof(node_id) * (n + 1));
-    node_id *E = malloc(sizeof(node_id) * m);
-    node_id *R = malloc(sizeof(node_id) * m);
-    node_weight *C = malloc(sizeof(node_weight) * m);
-
-    // Init offsets
-    V[0] = 0;
-    V[1] = 0;
-    V[2] = na;
-    for (node_id i = 1; i < na; i++)
-        V[i + 2] = V[i + 1] + g->D[RM[i]] + 1;
-    V[na + 2] = V[na + 1] + g->D[RM[na]] + 1;
-    for (node_id i = na + 1; i < 2 * na; i++)
-        V[i + 2] = V[i + 1] + g->D[RM[i - na]] + 1;
-
-    V[n] = m - na;
-
-    // Source vertex
-    for (node_id i = 1; i <= na; i++)
-    {
-        node_id e = V[1]++, re = V[i + 1]++;
-
-        E[e] = i;
-        R[e] = re;
-        C[e] = g->W[RM[i]];
-
-        E[re] = 0;
-        R[re] = e;
-        C[re] = 0;
-    }
-
-    // First layer
-    for (node_id i = 1; i <= na; i++)
-    {
-        node_id u = RM[i];
-        for (node_id j = 0; j < g->D[u]; j++)
-        {
-            node_id v = g->V[u][j];
-
-            node_id e = V[i + 1]++, re = V[FM[v] + na + 1]++;
-
-            E[e] = FM[v] + na;
-            R[e] = re;
-            C[e] = g->W[u];
-
-            E[re] = i;
-            R[re] = e;
-            C[re] = 0;
-        }
-    }
-
-    // Second layer
-    for (node_id i = na + 1; i <= 2 * na; i++)
-    {
-        node_id e = V[i + 1]++, re = V[n]++;
-
-        E[e] = n - 1;
-        R[e] = re;
-        C[e] = g->W[RM[i - na]];
-
-        E[re] = i;
-        R[re] = e;
-        C[re] = 0;
-    }
-
-    node_id *D = malloc(sizeof(node_id) * n);
-    node_id *_R = malloc(sizeof(node_id) * n);
-    node_id *_W = malloc(sizeof(node_id) * n);
-
-    node_id *ES = malloc(sizeof(node_id) * m);
-    node_id *EL = malloc(sizeof(node_id) * m);
-
-    node_weight *P = malloc(sizeof(node_weight) * m);
-    node_weight *H = malloc(sizeof(node_weight) * n);
-    node_weight *L = malloc(sizeof(node_weight) * n);
-
-    node_weight flow = 1;
-    node_id ne = 0;
-    node_id it_count = 0;
-    while (flow > 0)
-    {
-        // for (node_id i = 0; i <= n; i++)
-        //     printf("%d ", V[i]);
-        // printf("\n");
-        // for (node_id i = 0; i < m; i++)
-        //     printf("%lld ", C[i]);
-        // printf("\n");
-
-        it_count++;
-        bfs(n, V, E, C, D, _R, _W, ES, EL, &ne);
-        if (D[n - 1] < 0)
-            break;
-        flow = tide_cycle(n, E, ES, EL, ne, R, C, P, H, L);
-    }
-    // printf("%d\n", it_count);
-
-    bfs(n, V, E, C, D, _R, _W, ES, EL, &ne);
-
-    node_id *red = malloc(sizeof(node_id) * na);
-    node_id n_red = 0;
-    for (node_id i = 1; i <= na; i++)
-    {
-        if (D[i] < 0)
-            continue;
-
-        red[n_red++] = RM[i];
-    }
-    if (n_red > 0)
-    {
-        d->n = g->l;
-        d->x = n_red;
+    d->n = g->l;
+    d->x = n_red;
+    *offset = 0;
+    if (n_red > 0) {
+        red = realloc(red, n_red * sizeof(node_id));
         d->data = (void *)red;
-        *offset = 0;
 
-        for (node_id i = 0; i < n_red; i++)
-        {
+        for (node_id i = 0; i < n_red; i++) {
             node_id u = red[i];
             *offset += g->W[u];
             graph_deactivate_neighborhood(g, u);
             reduction_data_queue_distance_two(g, u, c);
         }
-    }
-    else
-    {
+    } else {
+        d->data = NULL;
         free(red);
     }
 
-    free(ES);
-    free(EL);
-    free(P);
-    free(H);
-    free(L);
+    free_fg(&fg);
+    free_node_map(&nm);
 
-    free(D);
-    free(_R);
-    free(_W);
-
-    free(FM);
-    free(RM);
-
-    free(V);
-    free(E);
-    free(R);
-    free(C);
-
-    return n_red > 0;
+    return aug > 0;
 }
 
-void critical_set_restore_graph(graph *g, reconstruction_data *d)
-{
+void critical_set_restore_graph(graph *g, reconstruction_data *d) {
     graph_undo_changes(g, d->n);
 }
 
-void critical_set_reconstruct_solution(int *I, reconstruction_data *d)
-{
+void critical_set_reconstruct_solution(int *I, reconstruction_data *d) {
     node_id *red = (node_id *)d->data;
     node_id n_red = d->x;
 
-    for (node_id i = 0; i < n_red; i++)
-    {
+    for (node_id i = 0; i < n_red; i++) {
         node_id u = red[i];
         I[u] = 1;
     }
 }
 
-void critical_set_clean(reconstruction_data *d)
-{
-    free(d->data);
-}
+void critical_set_clean(reconstruction_data *d) { free(d->data); }
