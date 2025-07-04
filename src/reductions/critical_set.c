@@ -18,6 +18,8 @@ typedef struct {
     node_id n;
     // Source and sink indices in the flow graph.
     node_id source, sink;
+    // The total capacity of all edges leaving the source.
+    flow_t outgoing_source_cap;
     // Number of edges in the flow graph.
     edge_id m;
     // For edge e = (u,v), heads[e] == v.
@@ -101,9 +103,12 @@ static void build_fg(dinitz_fg *fg, const node_map *nm, const graph *g) {
 
     memcpy(fg->progress, fg->edge_idxs, fg->n * sizeof(edge_id));
 
+    fg->outgoing_source_cap = 0;
+
     for (node_id u = 0; u < nm->active; u++) {
         node_id u_orig = nm->reverse[u];
         flow_t weight = g->W[u_orig];
+        fg->outgoing_source_cap += weight;
 
         add_edges(fg, fg->progress, fg->source, u, weight);
         add_edges(fg, fg->progress, u + nm->active, fg->sink, weight);
@@ -244,15 +249,14 @@ int critical_set_reduce_graph(graph *g, node_id u, node_weight *offset,
     build_fg(&fg, &nm, g);
     flow_t aug = solve_max_flow(&fg);
 
-    node_id *red = malloc(g->n * sizeof(node_id));
-    node_id n_red = nodes_to_reduce(&fg, &nm, g, red);
+    if (aug < fg.outgoing_source_cap) {
+        node_id *red = malloc(g->n * sizeof(node_id));
+        node_id n_red = nodes_to_reduce(&fg, &nm, g, red);
 
-    d->n = g->l;
-    d->x = n_red;
-    *offset = 0;
-    if (n_red > 0) {
-        red = realloc(red, n_red * sizeof(node_id));
-        d->data = (void *)red;
+        d->n = g->l;
+        d->x = n_red;
+        *offset = 0;
+        d->data = (void *)realloc(red, n_red * sizeof(node_id));
 
         for (node_id i = 0; i < n_red; i++) {
             node_id u = red[i];
@@ -260,15 +264,12 @@ int critical_set_reduce_graph(graph *g, node_id u, node_weight *offset,
             graph_deactivate_neighborhood(g, u);
             reduction_data_queue_distance_two(g, u, c);
         }
-    } else {
-        d->data = NULL;
-        free(red);
     }
 
     free_fg(&fg);
     free_node_map(&nm);
 
-    return aug > 0;
+    return aug < fg.outgoing_source_cap;
 }
 
 void critical_set_restore_graph(graph *g, reconstruction_data *d) {
