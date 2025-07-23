@@ -13,6 +13,7 @@
 #include "simplicial_vertex_with_weight_transfer.h"
 #include "triangle.h"
 #include "twin.h"
+#include "edge_expansion.h"
 #include "unconfined.h"
 #include "v_shape.h"
 #include "weighted_funnel.h"
@@ -31,7 +32,7 @@ int main(int argc, char **argv)
 
     long long n = g->n, m = g->m;
 
-    reducer *r = reducer_init(g, 11,
+    reducer *r = reducer_init(g, 12,
                               degree_zero,
                               degree_one,
                               neighborhood_removal,
@@ -42,12 +43,15 @@ int main(int argc, char **argv)
                               simplicial_vertex_with_weight_transfer,
                               weighted_funnel,
                               unconfined,
-                              extended_domination);
+                              extended_domination,
+                              edge_expansion);
 
     double start = get_wtime();
 
     reduction_log *l = reducer_init_reduction_log(g);
-    reducer_struction_fast(r, g, l, 6000);
+    reducer_reduce_continue(r, g, l, 6000);
+    // reducer_struction_fast(r, g, l, 6000);
+    // reducer_struction(r, g, l, 0, 6000);
 
     double elapsed = get_wtime() - start;
 
