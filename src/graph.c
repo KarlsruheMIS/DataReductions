@@ -69,7 +69,7 @@ graph *graph_init()
 
 static inline void parse_id(char *Data, size_t *p, long long *v)
 {
-    while (Data[*p] < '0' || Data[*p] > '9')
+    while ((Data[*p] < '0' || Data[*p] > '9') && Data[*p] != '\n')
         (*p)++;
 
     *v = 0;
@@ -77,9 +77,16 @@ static inline void parse_id(char *Data, size_t *p, long long *v)
         *v = (*v) * 10 + Data[(*p)++] - '0';
 }
 
+static inline void skip_line(char *Data, size_t *p)
+{
+    while (Data[*p] != '\n')
+        (*p)++;
+    (*p)++;
+}
+
 graph *graph_parse(FILE *f)
 {
-    graph *g = graph_init();
+    graph *g = graph_init(0);
 
     fseek(f, 0, SEEK_END);
     size_t size = ftell(f);
@@ -88,21 +95,36 @@ graph *graph_parse(FILE *f)
     char *Data = mmap(0, size, PROT_READ, MAP_PRIVATE, fileno_unlocked(f), 0);
     size_t p = 0;
 
+    while (Data[p] == '%')
+        skip_line(Data, &p);
+
     long long n, m, w, t;
     parse_id(Data, &p, &n);
     parse_id(Data, &p, &m);
     parse_id(Data, &p, &t);
 
-    for (node_id u = 0; u < n; u++)
+    skip_line(Data, &p);
+
+    int vertex_weights = t >= 10,
+        edge_weights = (t == 1 || t == 11);
+
+    for (int u = 0; u < n; u++)
     {
-        graph_construction_add_vertex(g, 0);
+        graph_construction_add_vertex(g, 1);
     }
 
     long long ei = 0;
-    for (node_id u = 0; u < n; u++)
+    for (int u = 0; u < n; u++)
     {
-        parse_id(Data, &p, &w);
-        g->W[u] = w;
+        while (Data[p] == '%')
+            skip_line(Data, &p);
+
+        g->W[u] = 1;
+        if (vertex_weights)
+        {
+            parse_id(Data, &p, &w);
+            g->W[u] = w;
+        }
 
         while (ei < m * 2)
         {
@@ -115,6 +137,10 @@ graph *graph_parse(FILE *f)
             parse_id(Data, &p, &e);
             if (e - 1 > u)
                 graph_construction_add_edge(g, u, e - 1);
+
+            if (edge_weights)
+                parse_id(Data, &p, &w);
+
             ei++;
         }
         p++;
