@@ -24,7 +24,7 @@ void clique_cover_largest_degree_first(graph *g, int *C, int *P, int *T, node_id
         if (!g->A[u])
             P[u] = -1;
         else
-            P[u] = g->D[u];
+            P[u] = g->n - g->D[u];
     }
 
     clique_cover_from_priority(g, C, P, T, O);
