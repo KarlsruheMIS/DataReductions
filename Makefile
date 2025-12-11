@@ -10,7 +10,7 @@ OBJ_SHARED = graph.o reducer.o reduction.o clique_cover.o branch_and_reduce.o \
 			 extended_domination.o weighted_funnel.o densify.o struction.o edge_expansion.o
 
 OBJ_REDUCE = $(OBJ_SHARED) main.o
-OBJ_VIS = $(OBJ_SHARED) visualizer.o main_visualizer.o
+OBJ_VIS = $(OBJ_SHARED) main_visualizer.o barnes_hut.o screen.o
 OBJ_LIB = $(OBJ_SHARED) mwis_reductions.o
 
 OBJ_REDUCE := $(addprefix bin/, $(OBJ_REDUCE))
@@ -30,7 +30,7 @@ mwis_reduce : $(OBJ_REDUCE)
 	$(CC) $(CFLAGS) -o $@ $^
 
 mwis_visualize : $(OBJ_VIS)
-	$(CC) $(CFLAGS) -o $@ $^ -lm -lglut -lGLU -lGL
+	$(CC) $(CFLAGS) -o $@ $^ -lm `sdl2-config --cflags --libs`
 
 libmwis_reductions.a : $(OBJ_LIB)
 	ar r $@ $^
