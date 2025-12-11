@@ -135,7 +135,7 @@ void barnes_hut_populate(barnes_hut *bh, graph *g)
 
         int p = 0;
         float x = bh->X[u], y = bh->Y[u];
-        float A = (float)(g->W[u]);
+        float A = 1.0f; // (float)(g->W[u]);
         float r = sqrtf(A / M_PI);
 
         for (int i = 0; i < bh->l; i++)
@@ -197,7 +197,7 @@ void barnes_hut_forces_repell(barnes_hut *bh, graph *g)
 
             float x = bh->X[u], y = bh->Y[u];
             float _x = bh->X[u], _y = bh->Y[u];
-            float A = (float)(g->W[u]);
+            float A = 1.0f; // (float)(g->W[u]);
             float r = sqrtf(A / M_PI);
 
             while (s < t)
@@ -295,7 +295,7 @@ void barnes_hut_forces_spring(barnes_hut *bh, graph *g)
             continue;
 
         float x = bh->X[u], y = bh->Y[u];
-        float ru = sqrtf((float)g->W[u] / M_PI);
+        float ru = sqrtf(1.0f / M_PI); // sqrtf((float)g->W[u] / M_PI);
 
         float dx_g = gx - x,
               dy_g = gy - y;
@@ -308,7 +308,7 @@ void barnes_hut_forces_spring(barnes_hut *bh, graph *g)
         for (int i = 0; i < g->D[u]; i++)
         {
             int v = g->V[u][i];
-            double rv = sqrt((double)g->W[v] / M_PI);
+            double rv = sqrt(1.0f / M_PI); // sqrt((float)g->W[v] / M_PI);
             if (v == u)
                 continue;
 

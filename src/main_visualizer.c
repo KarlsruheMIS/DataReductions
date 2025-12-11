@@ -1,6 +1,19 @@
 #include "graph.h"
 #include "barnes_hut.h"
 #include "screen.h"
+#include "clique_cover.h"
+
+#include "reducer.h"
+#include "mwis_reductions.h"
+
+#include "degree_zero.h"
+#include "degree_one.h"
+#include "triangle.h"
+#include "v_shape.h"
+#include "neighborhood_removal.h"
+#include "domination.h"
+#include "unconfined.h"
+#include "twin.h"
 
 #include <SDL2/SDL.h>
 #include <stdint.h>
@@ -20,6 +33,17 @@ uint32_t hash_color(uint32_t id)
     return (r << 16) | (g << 8) | b;
 }
 
+uint32_t get_color_from_gradient(double weight)
+{
+    uint32_t r, g, b;
+
+    r = 0;
+    g = 255.0 * (1.0 - weight);
+    b = 255.0 * weight;
+
+    return (r << 16) | (g << 8) | b; // Return 0xff ff ff format
+}
+
 int main(int argc, char **argv)
 {
     SDL_Init(SDL_INIT_VIDEO);
@@ -36,8 +60,15 @@ int main(int argc, char **argv)
     graph *g = graph_parse(f);
     fclose(f);
 
-    for (int i = 0; i < g->n; i++)
-        g->W[i] = 1;
+    reducer *r = reducer_init(g, 8,
+                              degree_zero,
+                              degree_one,
+                              neighborhood_removal,
+                              triangle,
+                              v_shape,
+                              domination,
+                              twin,
+                              unconfined);
 
     printf("%lld %lld\n", g->n, g->m);
 
@@ -51,8 +82,22 @@ int main(int argc, char **argv)
         Colors[u] = 0x2c2c2c;
     }
 
+    int *C = malloc(sizeof(int) * g->n);
+    int *P = malloc(sizeof(int) * g->n);
+    int *T = malloc(sizeof(int) * g->n);
+    int *O = malloc(sizeof(int) * g->n);
+    int ct = 0;
+
     int mbd = 0, selected = -1;
     int draw_edges = 0;
+    int show_weights = 0;
+    int reducing = 0;
+
+    reduction_log *l = reducer_init_reduction_log(g);
+
+    long long max_weight = 0;
+    for (int u = 0; u < g->n; u++)
+        max_weight = max_weight > g->W[u] ? max_weight : g->W[u];
 
     while (running)
     {
@@ -145,7 +190,53 @@ int main(int argc, char **argv)
             {
                 running = 0;
             }
+            else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_r)
+            {
+                reducing = !reducing;
+            }
+            else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_u)
+            {
+                reducing = 0;
+                reducer_restore_graph(g, l, 0);
+
+                reducer_queue_all(r, g);
+            }
+            else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_c)
+            {
+                show_weights = 0;
+                if (ct == 0)
+                    clique_cover_largest_degree_first(g, C, P, T, O);
+                else
+                {
+                    clique_cover_from_priority(g, P, C, T, O);
+                    int *tmp = C;
+                    C = P;
+                    P = tmp;
+                }
+
+                for (int u = 0; u < g->n; u++)
+                    Colors[u] = hash_color(C[u]);
+
+                ct++;
+            }
+            else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_w)
+            {
+                show_weights = !show_weights;
+                if (show_weights)
+                {
+                    for (int u = 0; u < g->n; u++)
+                        Colors[u] = get_color_from_gradient((double)g->W[u] / (double)max_weight);
+                }
+                else
+                {
+                    for (int u = 0; u < g->n; u++)
+                        Colors[u] = 0x2c2c2c;
+                }
+            }
         }
+
+        if (reducing)
+            reducer_reduce_continue(r, g, l, 0.0001);
 
         double t0 = omp_get_wtime();
         barnes_hut_step(bh, g);
