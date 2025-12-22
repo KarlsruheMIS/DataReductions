@@ -185,7 +185,7 @@ int reducer_apply_reduction(graph *g, node_id u, reduction rule, reducer *r, red
 
     while (g->_a > r->_a)
         reducer_increase(r);
-    if (l->n == l->_a)
+    if (l->n + 1 == l->_a)
         reducer_increase_reduction_log(l);
 
     reducer_queue_changed(g, r);
