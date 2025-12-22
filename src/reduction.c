@@ -70,6 +70,7 @@ void reduction_data_free(buffers *b, change_list *c)
         free(b->fast_sets[i]);
     }
     free(b->buffers);
+    free(b->buffers_weigth);
     free(b->fast_sets);
     free(b);
 
