@@ -4,7 +4,7 @@ This project provides a C library with a collection of reduction rules for the M
 
 This code is intended as a reference implementation for the reduction rules described in our survey paper on arXiv, [Accelerating Reductions Using Graph Neural Networks and a New Concurrent Local Search for the Maximum Weight Independent Set Problem](https://doi.org/10.48550/arXiv.2412.14198) by Ernestine Großmann, Kenneth Langedal, and Christian Schulz.
 
-For information on how to contribute, see the [REDUCTIONS.md](REDUCTIONS.md) file.
+For information on how to contribute, see the [REDUCTIONS.md](REDUCTIONS.md) file. Note that this is a work in progress. If you encounter any problems with the code, please let us know by opening a new issue or sending us an email.
 
 ## How to Build
 
