@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 int simplicial_vertex_with_weight_transfer_reduce_graph(graph *g, node_id u, node_weight *offset,
-                                                        buffers *b, change_list *c, reconstruction_data *d)
+                                                        buffers *b, changed_list *c, reconstruction_data *d)
 {
     assert(g->A[u]);
 
@@ -45,19 +45,18 @@ int simplicial_vertex_with_weight_transfer_reduce_graph(graph *g, node_id u, nod
 
     *offset = g->W[max_weight_v_simplicial];
     d->u = max_weight_v_simplicial;
-    d->n = g->l;
     d->data = NULL;
 
     if (!higher_weight_vertex) // simplicial vertex reduction
     {
         d->z = 0;
-        graph_deactivate_neighborhood(g, max_weight_v_simplicial);
+        graph_remove_neighborhood(g, max_weight_v_simplicial);
     }
     else // simplicial weight transfer
     {
         d->z = 1;
         d->x = 0;
-        graph_deactivate_vertex(g, max_weight_v_simplicial);
+        graph_remove_vertex(g, max_weight_v_simplicial);
         node_id *remaining_vertices = malloc(sizeof(node_id) * g->D[u]);
         for (node_id i = 0; i < g->D[max_weight_v_simplicial]; i++)
         {
@@ -65,7 +64,7 @@ int simplicial_vertex_with_weight_transfer_reduce_graph(graph *g, node_id u, nod
 
             if (g->W[v] <= g->W[max_weight_v_simplicial])
             {
-                graph_deactivate_vertex(g, v);
+                graph_remove_vertex(g, v);
             }
             else
             {
@@ -78,13 +77,6 @@ int simplicial_vertex_with_weight_transfer_reduce_graph(graph *g, node_id u, nod
 
     reduction_data_queue_distance_two(g, max_weight_v_simplicial, c);
     return 1;
-}
-
-void simplicial_vertex_with_weight_transfer_restore_graph(graph *g, reconstruction_data *d)
-{
-    assert(!g->A[d->u]);
-
-    graph_undo_changes(g, d->n);
 }
 
 void simplicial_vertex_with_weight_transfer_reconstruct_solution(int *I, reconstruction_data *d)

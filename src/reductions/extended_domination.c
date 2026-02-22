@@ -4,7 +4,7 @@
 #include <assert.h>
 
 int extended_domination_reduce_graph(graph *g, node_id u, node_weight *offset,
-                                     buffers *b, change_list *c, reconstruction_data *d)
+                                     buffers *b, changed_list *c, reconstruction_data *d)
 {
     assert(g->A[u]);
 
@@ -21,7 +21,6 @@ int extended_domination_reduce_graph(graph *g, node_id u, node_weight *offset,
         return 0;
 
     *offset = 0;
-    d->n = g->l;
 
     if (g->W[md] > g->W[u] && g->D[md] >= g->D[u] &&
         set_is_subset_except_one(g->V[u], g->D[u], g->V[md], g->D[md], md))
@@ -59,11 +58,6 @@ int extended_domination_reduce_graph(graph *g, node_id u, node_weight *offset,
     }
 
     return 0;
-}
-
-void extended_domination_restore_graph(graph *g, reconstruction_data *d)
-{
-    graph_undo_changes(g, d->n);
 }
 
 void extended_domination_reconstruct_solution(int *I, reconstruction_data *d)

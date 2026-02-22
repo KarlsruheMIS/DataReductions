@@ -1,11 +1,8 @@
-#include "extended_struction.h"
+#include "struction.h"
 #include "algorithms.h"
 
 #include <assert.h>
 #include <stdlib.h>
-
-int STRUCTION_MAX_DEGREE = 8;
-int STRUCTION_MAX_NODES = 16;
 
 node_id struction_enumerate_independent_sets(graph *g, node_id u, buffers *b)
 {
@@ -43,7 +40,7 @@ node_id struction_enumerate_independent_sets(graph *g, node_id u, buffers *b)
         {
             if (cost > g->W[u]) // Add IS
             {
-                if (n_is >= STRUCTION_MAX_NODES)
+                if (n_is >= MAX_STRUCTION_NODES)
                     return -1;
 
                 W[n_is] = cost;
@@ -91,11 +88,11 @@ node_id struction_enumerate_independent_sets(graph *g, node_id u, buffers *b)
 }
 
 int struction_reduce_graph(graph *g, node_id u, node_weight *offset,
-                           buffers *b, change_list *c, reconstruction_data *d)
+                           buffers *b, changed_list *c, reconstruction_data *d)
 {
     assert(g->A[u]);
 
-    if (g->D[u] > STRUCTION_MAX_DEGREE || g->D[u] < 3)
+    if (g->D[u] > MAX_STRUCTION_DEGREE || g->D[u] < 3)
         return 0;
 
     int n = struction_enumerate_independent_sets(g, u, b);
@@ -111,7 +108,6 @@ int struction_reduce_graph(graph *g, node_id u, node_weight *offset,
 
     // Reduce graph
     *offset = g->W[u];
-    d->n = g->l;
     d->u = u;
     d->x = n;
 
@@ -120,7 +116,7 @@ int struction_reduce_graph(graph *g, node_id u, node_weight *offset,
 
     d->data = (void *)data;
 
-    graph_deactivate_neighborhood(g, u);
+    graph_remove_neighborhood(g, u);
 
     for (node_id i = 0; i < n; i++)
     {
@@ -160,11 +156,6 @@ int struction_reduce_graph(graph *g, node_id u, node_weight *offset,
     }
 
     return 1;
-}
-
-void struction_restore_graph(graph *g, reconstruction_data *d)
-{
-    graph_undo_changes(g, d->n);
 }
 
 void struction_reconstruct_solution(int *I, reconstruction_data *d)

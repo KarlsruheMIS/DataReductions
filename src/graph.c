@@ -148,7 +148,6 @@ graph *graph_parse(FILE *f)
 
     munmap(Data, size);
 
-    graph_construction_sort_edges(g);
     return g;
 }
 
@@ -187,6 +186,7 @@ void graph_construction_add_edge(graph *g, node_id u, node_id v)
 
     graph_append_endpoint(g, u, v);
     graph_append_endpoint(g, v, u);
+    g->m += 2;
 }
 
 void graph_construction_sort_edges(graph *g)
@@ -194,6 +194,21 @@ void graph_construction_sort_edges(graph *g)
     long long m = 0;
     for (node_id i = 0; i < g->n; i++)
     {
+        if (!g->A[i])
+            continue;
+
+        int sorted = 1;
+        for (node_id j = 1; j < g->D[i]; j++)
+        {
+            if (g->V[i][j] <= g->V[i][j - 1])
+                sorted = 0;
+        }
+        if (sorted)
+        {
+            m += g->D[i];
+            continue;
+        }
+
         qsort(g->V[i], g->D[i], sizeof(node_id), compare_ids);
         int d = 0;
         for (node_id j = 0; j < g->D[i]; j++)
@@ -291,7 +306,7 @@ void graph_remove_edge(graph *g, node_id u, node_id v)
     assert(e0 == e1);
 }
 
-void graph_deactivate_vertex(graph *g, node_id u)
+void graph_remove_vertex(graph *g, node_id u)
 {
     assert(g->A[u]);
 
@@ -321,7 +336,7 @@ void graph_activate_vertex(graph *g, node_id u)
     g->nr++;
 }
 
-void graph_deactivate_neighborhood(graph *g, node_id u)
+void graph_remove_neighborhood(graph *g, node_id u)
 {
     assert(g->A[u]);
 

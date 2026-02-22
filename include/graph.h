@@ -2,7 +2,7 @@
 
 #define __GRAPH__
 
-#include "defs.h"
+#include "mwis_reductions.h"
 
 #include <stdio.h>
 
@@ -47,11 +47,9 @@ void graph_construction_sort_edges(graph *g);
 /*
     After construction, use these to maintain sorted neighborhoods.
 
-    The deactivate function only removes edges from the active side,
-    meaning the corresponding activate function can easily reconstruct
-    the graph to before the deactivate call. Note that for this to work,
-    activation calls must happen in the exact reverse order of
-    the deactivation calls.
+    The remove vertex and neighborhood functions also remove all
+    incident edges. Try to use these two functions instead of manually
+    removing edges, as they are more effective for reconstruction the graph.
 */
 
 void graph_add_vertex(graph *g, node_weight w);
@@ -60,9 +58,9 @@ void graph_add_edge(graph *g, node_id u, node_id v);
 
 void graph_remove_edge(graph *g, node_id u, node_id v);
 
-void graph_deactivate_vertex(graph *g, node_id u);
+void graph_remove_vertex(graph *g, node_id u);
 
-void graph_deactivate_neighborhood(graph *g, node_id u);
+void graph_remove_neighborhood(graph *g, node_id u);
 
 void graph_change_vertex_weight(graph *g, node_id u, node_weight w);
 

@@ -20,7 +20,7 @@
 //         {
 //             *offset = 0;
 //             d->u = u;
-//             graph_deactivate_vertex(g, u);
+//             graph_remove_vertex(g, u);
 
 //             reduction_data_queue_distance_one(g, u, c);
 
@@ -32,7 +32,7 @@
 // }
 
 int domination_reduce_graph(graph *g, node_id u, node_weight *offset,
-                            buffers *b, change_list *c, reconstruction_data *d)
+                            buffers *b, changed_list *c, reconstruction_data *d)
 {
     assert(g->A[u]);
 
@@ -49,13 +49,12 @@ int domination_reduce_graph(graph *g, node_id u, node_weight *offset,
         return 0;
 
     *offset = 0;
-    d->n = g->l;
 
     if (g->W[md] <= g->W[u] && g->D[md] >= g->D[u] &&
         set_is_subset_except_one(g->V[u], g->D[u], g->V[md], g->D[md], md))
     {
         d->u = md;
-        graph_deactivate_vertex(g, md);
+        graph_remove_vertex(g, md);
 
         reduction_data_queue_distance_one(g, md, c);
 
@@ -70,7 +69,7 @@ int domination_reduce_graph(graph *g, node_id u, node_weight *offset,
             set_is_subset_except_one(g->V[u], g->D[u], g->V[v], g->D[v], v))
         {
             d->u = v;
-            graph_deactivate_vertex(g, v);
+            graph_remove_vertex(g, v);
 
             reduction_data_queue_distance_one(g, v, c);
 
@@ -79,13 +78,6 @@ int domination_reduce_graph(graph *g, node_id u, node_weight *offset,
     }
 
     return 0;
-}
-
-void domination_restore_graph(graph *g, reconstruction_data *d)
-{
-    assert(!g->A[d->u]);
-
-    graph_undo_changes(g, d->n);
 }
 
 void domination_reconstruct_solution(int *I, reconstruction_data *d)

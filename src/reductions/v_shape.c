@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
-                         buffers *b, change_list *c, reconstruction_data *d)
+                         buffers *b, changed_list *c, reconstruction_data *d)
 {
     assert(g->A[u]);
 
@@ -31,7 +31,6 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
     // flag to track the reduction case
     d->z = 0;
     d->u = u;
-    d->n = g->l;
     *offset = g->W[u];
 
     if (g->W[u] < g->W[d->x])
@@ -62,7 +61,7 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
     {
         d->z = 2;
 
-        graph_deactivate_vertex(g, u);
+        graph_remove_vertex(g, u);
 
         graph_change_vertex_weight(g, d->y, g->W[d->y] - g->W[u]);
 
@@ -81,7 +80,7 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
         {
             d->z = 3;
 
-            graph_deactivate_neighborhood(g, u);
+            graph_remove_neighborhood(g, u);
 
             reduction_data_queue_distance_two(g, u, c);
         }
@@ -97,19 +96,14 @@ int v_shape_reduce_graph(graph *g, node_id u, node_weight *offset,
             }
 
             graph_change_vertex_weight(g, d->v, (g->W[d->x] + g->W[d->y]) - g->W[u]);
-            graph_deactivate_vertex(g, u);
-            graph_deactivate_vertex(g, d->y);
+            graph_remove_vertex(g, u);
+            graph_remove_vertex(g, d->y);
 
             reduction_data_queue_distance_one(g, d->v, c);
         }
     }
 
     return 1;
-}
-
-void v_shape_restore_graph(graph *g, reconstruction_data *d)
-{
-    graph_undo_changes(g, d->n);
 }
 
 void v_shape_reconstruct_solution(int *I, reconstruction_data *d)

@@ -6,7 +6,7 @@
 #include <assert.h>
 
 int weighted_funnel_apply(graph *g, node_id u, node_id v, node_weight *offset,
-                          buffers *b, change_list *c, reconstruction_data *d)
+                          buffers *b, changed_list *c, reconstruction_data *d)
 {
     for (node_id i = 0; i < g->D[u]; i++)
     {
@@ -23,12 +23,11 @@ int weighted_funnel_apply(graph *g, node_id u, node_id v, node_weight *offset,
     *offset = g->W[u];
     d->u = u;
     d->v = v;
-    d->n = g->l;
 
     node_id *V = malloc(sizeof(node_id) * g->D[u]);
     d->x = 0;
 
-    graph_deactivate_vertex(g, u);
+    graph_remove_vertex(g, u);
     reduction_data_queue_distance_one(g, u, c);
 
     if (g->W[u] >= g->W[v])
@@ -42,7 +41,7 @@ int weighted_funnel_apply(graph *g, node_id u, node_id v, node_weight *offset,
 
             if (g->W[w] + g->W[v] <= g->W[u] || graph_is_neighbor(g, v, w))
             {
-                graph_deactivate_vertex(g, w);
+                graph_remove_vertex(g, w);
             }
             else
             {
@@ -56,7 +55,7 @@ int weighted_funnel_apply(graph *g, node_id u, node_id v, node_weight *offset,
             }
             reduction_data_queue_distance_one(g, w, c);
         }
-        graph_deactivate_vertex(g, v);
+        graph_remove_vertex(g, v);
     }
     else
     {
@@ -73,7 +72,7 @@ int weighted_funnel_apply(graph *g, node_id u, node_id v, node_weight *offset,
 
             if (graph_is_neighbor(g, w, v))
             {
-                graph_deactivate_vertex(g, w);
+                graph_remove_vertex(g, w);
             }
             else
             {
@@ -94,7 +93,7 @@ int weighted_funnel_apply(graph *g, node_id u, node_id v, node_weight *offset,
 }
 
 int weighted_funnel_reduce_graph(graph *g, node_id u, node_weight *offset,
-                                 buffers *b, change_list *c, reconstruction_data *d)
+                                 buffers *b, changed_list *c, reconstruction_data *d)
 {
     assert(g->A[u]);
 
@@ -171,11 +170,6 @@ int weighted_funnel_reduce_graph(graph *g, node_id u, node_weight *offset,
     // TODO if this is reached there is normal reduction
 
     return 0;
-}
-
-void weighted_funnel_restore_graph(graph *g, reconstruction_data *d)
-{
-    graph_undo_changes(g, d->n);
 }
 
 void weighted_funnel_reconstruct_solution(int *I, reconstruction_data *d)

@@ -4,7 +4,7 @@
 #include <assert.h>
 
 int twin_reduce_graph(graph *g, node_id u, node_weight *offset,
-                      buffers *b, change_list *c, reconstruction_data *d)
+                      buffers *b, changed_list *c, reconstruction_data *d)
 {
     assert(g->A[u]);
 
@@ -28,11 +28,10 @@ int twin_reduce_graph(graph *g, node_id u, node_weight *offset,
         {
             d->u = u;
             d->v = v;
-            d->n = g->l;
 
             *offset = 0;
 
-            graph_deactivate_vertex(g, v);
+            graph_remove_vertex(g, v);
 
             graph_change_vertex_weight(g, u, g->W[u] + g->W[v]);
 
@@ -43,13 +42,6 @@ int twin_reduce_graph(graph *g, node_id u, node_weight *offset,
     }
 
     return 0;
-}
-
-void twin_restore_graph(graph *g, reconstruction_data *d)
-{
-    assert(g->A[d->u] && !g->A[d->v]);
-
-    graph_undo_changes(g, d->n);
 }
 
 void twin_reconstruct_solution(int *I, reconstruction_data *d)

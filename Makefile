@@ -1,22 +1,20 @@
 SHELL = /bin/bash
 
 CC = gcc
-CFLAGS = -g -std=gnu17 -O3 -I include -I include/reductions -fopenmp
+CFLAGS = -march=native -std=gnu17 -O3 -I include -I include/reductions -DNDEBUG
 
-OBJ_SHARED = graph.o reducer.o reduction.o clique_cover.o branch_and_reduce.o \
-			 degree_zero.o degree_one.o domination.o neighborhood_removal.o twin.o \
-			 triangle.o v_shape.o simultaneous_set.o unconfined.o simplicial_vertex.o \
-			 simplicial_vertex_with_weight_transfer.o critical_set.o extended_struction.o \
-			 extended_domination.o weighted_funnel.o densify.o struction.o edge_expansion.o
+OBJ_SHARED = graph.o reducer.o reduction_data.o \
+			 degree_zero.o degree_one.o neighborhood_removal.o triangle.o v_shape.o \
+			 domination.o twin.o simplicial_vertex.o simplicial_vertex_with_weight_transfer.o \
+			 weighted_funnel.o unconfined.o extended_domination.o critical_set.o \
+			 struction.o struction_runner.o
 
 OBJ_REDUCE = $(OBJ_SHARED) main.o
-OBJ_VIS = $(OBJ_SHARED) main_visualizer.o barnes_hut.o screen.o
 OBJ_LIB = $(OBJ_SHARED) mwis_reductions.o
 
 OBJ_REDUCE := $(addprefix bin/, $(OBJ_REDUCE))
-OBJ_VIS := $(addprefix bin/, $(OBJ_VIS))
 OBJ_LIB := $(addprefix bin/, $(OBJ_LIB))
-DEP = $(OBJ_REDUCE) $(OBJ_LIB) $(OBJ_VIS)
+DEP = $(OBJ_REDUCE) $(OBJ_LIB)
 DEP := $(sort $(DEP))
 
 vpath %.c src src/reductions
@@ -29,9 +27,6 @@ all : mwis_reduce libmwis_reductions.a
 mwis_reduce : $(OBJ_REDUCE)
 	$(CC) $(CFLAGS) -o $@ $^
 
-mwis_visualize : $(OBJ_VIS)
-	$(CC) $(CFLAGS) -o $@ $^ -lm `sdl2-config --cflags --libs`
-
 libmwis_reductions.a : $(OBJ_LIB)
 	ar r $@ $^
 
@@ -40,4 +35,4 @@ bin/%.o : %.c
 
 .PHONY : clean
 clean :
-	rm -f mwis_reduce mwis_visualize libmwis_reductions.a $(DEP) $(DEP:.o=.d)
+	rm -f mwis_reduce libmwis_reductions.a $(DEP) $(DEP:.o=.d)

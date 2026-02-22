@@ -4,7 +4,7 @@
 #include <assert.h>
 
 int simplicial_vertex_reduce_graph(graph *g, node_id u, node_weight *offset,
-                                   buffers *b, change_list *c, reconstruction_data *d)
+                                   buffers *b, changed_list *c, reconstruction_data *d)
 {
     assert(g->A[u]);
 
@@ -33,20 +33,12 @@ int simplicial_vertex_reduce_graph(graph *g, node_id u, node_weight *offset,
 
     *offset = g->W[u];
     d->u = u;
-    d->n = g->l;
 
-    graph_deactivate_neighborhood(g, u);
+    graph_remove_neighborhood(g, u);
 
     reduction_data_queue_distance_two(g, u, c);
 
     return 1;
-}
-
-void simplicial_vertex_restore_graph(graph *g, reconstruction_data *d)
-{
-    assert(!g->A[d->u]);
-
-    graph_undo_changes(g, d->n);
 }
 
 void simplicial_vertex_reconstruct_solution(int *I, reconstruction_data *d)
