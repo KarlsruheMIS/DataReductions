@@ -1,5 +1,7 @@
 # Data Reductions for the Maximum Weight Independent Set problem
 
+Part of the [KarlsruheMIS](https://github.com/KarlsruheMIS) organization.
+
 This project provides a C library with a collection of reduction rules for the Maximum Weight Independent Set (MWIS) problem. It also includes a command-line executable to apply these reductions to a given graph.
 
 This code is intended as a reference implementation for the reduction rules described in our survey paper on arXiv, [Accelerating Reductions Using Graph Neural Networks and a New Concurrent Local Search for the Maximum Weight Independent Set Problem](https://doi.org/10.48550/arXiv.2412.14198) by Ernestine Großmann, Kenneth Langedal, and Christian Schulz.
