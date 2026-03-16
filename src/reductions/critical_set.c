@@ -283,7 +283,7 @@ int critical_set_reduce_graph(graph *g, node_id u, node_weight *offset,
     build_fg(&fg, &nm, g);
     flow_t aug = solve_max_flow(&fg);
 
-    if (aug >= 0 && aug < fg.outgoing_source_cap)
+    if (aug > 0 && aug < fg.outgoing_source_cap)
     {
         node_id *red = malloc(g->n * sizeof(node_id));
         node_id n_red = nodes_to_reduce(&fg, &nm, g, red);
@@ -305,7 +305,7 @@ int critical_set_reduce_graph(graph *g, node_id u, node_weight *offset,
     free_fg(&fg);
     free_node_map(&nm);
 
-    return aug >= 0 && aug < fg.outgoing_source_cap;
+    return aug > 0 && aug < fg.outgoing_source_cap;
 }
 
 void critical_set_reconstruct_solution(int *I, reconstruction_data *d)
